@@ -16,17 +16,26 @@
 add_action( 'mainwp_child_plugin_activated', 'sprucely_setup_plugin_update_hook' );
 add_action( 'mainwp_cronupdatescheck_action', 'sprucely_check_for_updates' );
 
+/**
+ * Sets up the scheduled event for checking updates.
+ */
 function sprucely_setup_plugin_update_hook() {
 	if ( ! wp_next_scheduled( 'sprucely_check_for_updates' ) ) {
 		wp_schedule_event( time(), 'hourly', 'sprucely_check_for_updates' );
 	}
 }
 
+/**
+ * Checks for plugin and theme updates.
+ */
 function sprucely_check_for_updates() {
 	sprucely_check_for_plugin_updates();
 	sprucely_check_for_theme_updates();
 }
 
+/**
+ * Checks for plugin updates and sends notifications if updates are available.
+ */
 function sprucely_check_for_plugin_updates() {
 	global $wpdb;
 
@@ -39,17 +48,14 @@ function sprucely_check_for_plugin_updates() {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				'
+				"
 				SELECT
-					%s
+					plugin_upgrades
 				FROM
-					%s wp
+					{$wpdb->prefix}mainwp_wp wp
 				WHERE
-					%s = %d
-				',
-				'plugin_upgrades',
-				"{$wpdb->prefix}mainwp_wp",
-				'is_ignorePluginUpdates',
+					is_ignorePluginUpdates = %d
+				",
 				0
 			)
 		);
@@ -105,6 +111,9 @@ function sprucely_check_for_plugin_updates() {
 	}
 }
 
+/**
+ * Checks for theme updates and sends notifications if updates are available.
+ */
 function sprucely_check_for_theme_updates() {
 	global $wpdb;
 
@@ -117,17 +126,14 @@ function sprucely_check_for_theme_updates() {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				'
+				"
 				SELECT
-					%s
+					theme_upgrades
 				FROM
-					%s wp
+					{$wpdb->prefix}mainwp_wp wp
 				WHERE
-					%s = %d
-				',
-				'theme_upgrades',
-				"{$wpdb->prefix}mainwp_wp",
-				'is_ignoreThemeUpdates',
+					is_ignoreThemeUpgrades = %d
+				",
 				0
 			)
 		);
@@ -183,11 +189,21 @@ function sprucely_check_for_theme_updates() {
 	}
 }
 
+// Deactivation hook.
 register_deactivation_hook( __FILE__, 'sprucely_clear_scheduled_hook' );
+/**
+ * Clears the scheduled update check hook.
+ */
 function sprucely_clear_scheduled_hook() {
 	wp_clear_scheduled_hook( 'sprucely_check_for_updates' );
 }
 
+/**
+ * Retrieves the cached thumbnail URL for a given URL.
+ *
+ * @param string $url The URL of the site to get the thumbnail for.
+ * @return string The thumbnail URL.
+ */
 function sprucely_get_cached_thumbnail_url( $url ) {
 	$cache_key     = 'sprucely_thumbnail_url_' . md5( $url );
 	$thumbnail_url = get_transient( $cache_key );
@@ -200,6 +216,12 @@ function sprucely_get_cached_thumbnail_url( $url ) {
 	return $thumbnail_url;
 }
 
+/**
+ * Retrieves the thumbnail URL from the site's HTML.
+ *
+ * @param string $url The URL of the site to get the thumbnail for.
+ * @return string The thumbnail URL.
+ */
 function sprucely_get_thumbnail_url( $url ) {
 	$parsed_url = wp_parse_url( $url );
 	$base_url   = $parsed_url['scheme'] . '://' . $parsed_url['host'];
@@ -238,6 +260,13 @@ function sprucely_get_thumbnail_url( $url ) {
 	return ''; // Return an empty string if no image is found.
 }
 
+/**
+ * Sends a message to the Discord webhook URL.
+ *
+ * @param array  $update         The update information.
+ * @param string $webhook_url_const The webhook URL constant name.
+ * @return bool True if the message was sent successfully, false otherwise.
+ */
 function sprucely_send_discord_message( $update, $webhook_url_const ) {
 	if ( ! defined( $webhook_url_const ) ) {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -254,8 +283,8 @@ function sprucely_send_discord_message( $update, $webhook_url_const ) {
 		$changelog_summary = "**Changelog Summary:** $changelog_summary\n";
 	}
 
-	$description = $update['description'] ? "**Description:** {$update['description']}\n" : '';
-	$author      = $update['author'] ? "**Author:** {$update['author']}\n" : '';
+	$description = ! empty( $update['description'] ) ? "**Description:** {$update['description']}\n" : '';
+	$author      = ! empty( $update['author'] ) ? "**Author:** {$update['author']}\n" : '';
 
 	$embed = array(
 		'title'       => $update['plugin_name'] ?? $update['theme_name'],

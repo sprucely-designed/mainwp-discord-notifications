@@ -25,17 +25,27 @@ function sprucely_setup_plugin_update_hook() {
 function sprucely_check_for_plugin_updates() {
 	global $wpdb;
 
-	// Query to get plugin updates from the MainWP database, excluding ignored sites.
-	$sql = "
-        SELECT
-            wp.plugin_upgrades
-        FROM
-            {$wpdb->prefix}mainwp_wp wp
-        WHERE
-            wp.is_ignorePluginUpdates = 0
-    ";
+	// Check if cached results exist.
+	$cache_key = 'sprucely_plugin_updates';
+	$results   = wp_cache_get( $cache_key );
 
-	$results = $wpdb->get_results( $sql );
+	if ( false === $results ) {
+		// Query to get plugin updates from the MainWP database, excluding ignored sites.
+		$sql = "
+			SELECT
+				wp.plugin_upgrades
+			FROM
+				{$wpdb->prefix}mainwp_wp wp
+			WHERE
+				wp.is_ignorePluginUpdates = 0
+		";
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$results = $wpdb->get_results( $sql );
+
+		// Cache the results for 15 minutes.
+		wp_cache_set( $cache_key, $results, '', 300 ); // 300 = 5 minutes.
+	}
 
 	if ( empty( $results ) ) {
 		return;
@@ -60,6 +70,11 @@ function sprucely_check_for_plugin_updates() {
 							'plugin_name'   => $plugin_info['Name'],
 							'new_version'   => $update_info['new_version'],
 							'changelog_url' => $update_info['url'],
+							'plugin_uri'    => $plugin_info['PluginURI'],
+							'thumbnail_url' => sprucely_get_cached_thumbnail_url( $plugin_info['PluginURI'] ),
+							'description'   => $plugin_info['Description'],
+							'author'        => $plugin_info['AuthorName'],
+							'changelog'     => $update_info['sections']['changelog'] ?? '',
 						);
 					}
 				}
@@ -69,19 +84,13 @@ function sprucely_check_for_plugin_updates() {
 
 	if ( ! empty( $unique_updates ) ) {
 		foreach ( $unique_updates as $key => $update ) {
-			$message = sprintf(
-				'Update available for %s: Version %s - Changelog: %s',
-				$update['plugin_name'],
-				$update['new_version'],
-				$update['changelog_url']
-			);
-			if ( sprucely_send_discord_message( $message ) ) {
+			if ( sprucely_send_discord_message( $update ) ) {
 				$sent_notifications[ $key ] = true; // Mark this notification as sent.
 			}
 			usleep( 500000 ); // Sleep for 0.5 seconds to avoid rate limiting.
 		}
 		// Store the updated sent notifications.
-		set_transient( 'sprucely_sent_notifications', $sent_notifications, 12 * HOUR_IN_SECONDS );
+		set_transient( 'sprucely_sent_notifications', $sent_notifications, WEEK_IN_SECONDS );
 	}
 }
 
@@ -90,24 +99,90 @@ function sprucely_clear_scheduled_hook() {
 	wp_clear_scheduled_hook( 'sprucely_check_for_plugin_updates' );
 }
 
-if ( defined( 'WP_CLI' ) && WP_CLI ) {
-	WP_CLI::add_command( 'mainwp-notify-discord', 'mainwp_notify_discord_updates' );
+function sprucely_get_cached_thumbnail_url( $url ) {
+	$cache_key     = 'sprucely_thumbnail_url_' . md5( $url );
+	$thumbnail_url = get_transient( $cache_key );
+
+	if ( false === $thumbnail_url ) {
+		$thumbnail_url = sprucely_get_thumbnail_url( $url );
+		set_transient( $cache_key, $thumbnail_url, WEEK_IN_SECONDS );
+	}
+
+	return $thumbnail_url;
 }
 
-function mainwp_notify_discord_updates() {
-	sprucely_check_for_plugin_updates();
+function sprucely_get_thumbnail_url( $url ) {
+	$parsed_url = wp_parse_url( $url );
+	$base_url   = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+
+	// Fetch the HTML content of the page.
+	$response = wp_remote_get( $url );
+	if ( is_wp_error( $response ) ) {
+		return ''; // Return an empty string if fetching the HTML fails.
+	}
+
+	$html = wp_remote_retrieve_body( $response );
+	libxml_use_internal_errors( true ); // Handle HTML parsing errors gracefully.
+	$dom = new DOMDocument();
+	$dom->loadHTML( $html );
+
+	// Search for Open Graph image tags and standard favicon links.
+	$meta_tags = $dom->getElementsByTagName( 'meta' );
+	foreach ( $meta_tags as $meta ) {
+		if ( $meta->getAttribute( 'property' ) === 'og:image' || $meta->getAttribute( 'name' ) === 'og:image' ) {
+			return $meta->getAttribute( 'content' );
+		}
+	}
+
+	$links = $dom->getElementsByTagName( 'link' );
+	foreach ( $links as $link ) {
+		if ( $link->getAttribute( 'rel' ) === 'icon' || $link->getAttribute( 'rel' ) === 'shortcut icon' ) {
+			$favicon_url = $link->getAttribute( 'href' );
+			if ( strpos( $favicon_url, 'http' ) === false ) {
+				// Handle relative URLs.
+				$favicon_url = $base_url . '/' . ltrim( $favicon_url, '/' );
+			}
+			return $favicon_url;
+		}
+	}
+
+	return ''; // Return an empty string if no image is found.
 }
 
-function sprucely_send_discord_message( $message ) {
+function sprucely_send_discord_message( $update ) {
 	if ( ! defined( 'MAINWP_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( 'Discord webhook URL not defined.' );
 		return false;
 	}
 	$webhook_url = MAINWP_UPDATES_DISCORD_WEBHOOK_URL;
 
+	// Extract a summary of the changelog (first 800 characters)
+	$changelog_summary = wp_strip_all_tags( $update['changelog'] );
+	$changelog_summary = mb_substr( $changelog_summary, 0, 800 ) . '...';
+
+	$embed = array(
+		'title'       => $update['plugin_name'],
+		'description' => sprintf(
+			"**Version %s is available.**\n\n**Author:** %s\n**Description:** %s\n\n**Changelog Summary:** %s\n\n[View Full Changelog](%s)",
+			$update['new_version'],
+			$update['author'],
+			$update['description'],
+			$changelog_summary,
+			$update['changelog_url']
+		),
+		'url'         => $update['plugin_uri'],
+	);
+
+	if ( ! empty( $update['thumbnail_url'] ) ) {
+		$embed['thumbnail'] = array(
+			'url' => $update['thumbnail_url'],
+		);
+	}
+
 	$payload = array(
-		'content' => $message,
+		'content' => '',
+		'embeds'  => array( $embed ),
 	);
 
 	$args = array(
@@ -120,13 +195,13 @@ function sprucely_send_discord_message( $message ) {
 	$response = wp_remote_post( $webhook_url, $args );
 
 	if ( is_wp_error( $response ) ) {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( 'Discord Webhook Error: ' . $response->get_error_message() );
 		return false;
 	} else {
 		$response_body = wp_remote_retrieve_body( $response );
 		if ( wp_remote_retrieve_response_code( $response ) !== 204 ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( 'Discord Webhook Response: ' . $response_body );
 			return false;
 		}

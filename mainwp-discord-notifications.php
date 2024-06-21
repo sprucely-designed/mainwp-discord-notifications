@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: MainWP Discord Webhook Notifications
- * Description: Sends a message to a Discord server when a plugin update is available.
+ * Description: Sends a message to a Discord server when a plugin or theme update is available.
  * Version: 1.0
  * Author: Sprucely Designed
  * Author URI: https://www.sprucely.net
@@ -14,12 +14,17 @@
  */
 
 add_action( 'mainwp_child_plugin_activated', 'sprucely_setup_plugin_update_hook' );
-add_action( 'mainwp_cronupdatescheck_action', 'sprucely_check_for_plugin_updates' );
+add_action( 'mainwp_cronupdatescheck_action', 'sprucely_check_for_updates' );
 
 function sprucely_setup_plugin_update_hook() {
-	if ( ! wp_next_scheduled( 'sprucely_check_for_plugin_updates' ) ) {
-		wp_schedule_event( time(), 'hourly', 'sprucely_check_for_plugin_updates' );
+	if ( ! wp_next_scheduled( 'sprucely_check_for_updates' ) ) {
+		wp_schedule_event( time(), 'hourly', 'sprucely_check_for_updates' );
 	}
+}
+
+function sprucely_check_for_updates() {
+	sprucely_check_for_plugin_updates();
+	sprucely_check_for_theme_updates();
 }
 
 function sprucely_check_for_plugin_updates() {
@@ -52,7 +57,7 @@ function sprucely_check_for_plugin_updates() {
 	}
 
 	// Retrieve sent notifications from transient.
-	$sent_notifications = get_transient( 'sprucely_sent_notifications' );
+	$sent_notifications = get_transient( 'sprucely_sent_plugin_notifications' );
 	if ( ! is_array( $sent_notifications ) ) {
 		$sent_notifications = array();
 	}
@@ -72,8 +77,8 @@ function sprucely_check_for_plugin_updates() {
 							'changelog_url' => $update_info['url'],
 							'plugin_uri'    => $plugin_info['PluginURI'],
 							'thumbnail_url' => sprucely_get_cached_thumbnail_url( $plugin_info['PluginURI'] ),
-							'description'   => $plugin_info['Description'],
-							'author'        => $plugin_info['AuthorName'],
+							'description'   => $plugin_info['Description'] ?? '',
+							'author'        => $plugin_info['AuthorName'] ?? '',
 							'changelog'     => $update_info['sections']['changelog'] ?? '',
 						);
 					}
@@ -84,19 +89,91 @@ function sprucely_check_for_plugin_updates() {
 
 	if ( ! empty( $unique_updates ) ) {
 		foreach ( $unique_updates as $key => $update ) {
-			if ( sprucely_send_discord_message( $update ) ) {
+			if ( sprucely_send_discord_message( $update, 'MAINWP_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
 				$sent_notifications[ $key ] = true; // Mark this notification as sent.
 			}
 			usleep( 500000 ); // Sleep for 0.5 seconds to avoid rate limiting.
 		}
 		// Store the updated sent notifications.
-		set_transient( 'sprucely_sent_notifications', $sent_notifications, WEEK_IN_SECONDS );
+		set_transient( 'sprucely_sent_plugin_notifications', $sent_notifications, WEEK_IN_SECONDS );
+	}
+}
+
+function sprucely_check_for_theme_updates() {
+	global $wpdb;
+
+	// Check if cached results exist.
+	$cache_key = 'sprucely_theme_updates';
+	$results   = wp_cache_get( $cache_key );
+
+	if ( false === $results ) {
+		// Query to get theme updates from the MainWP database, excluding ignored sites.
+		$sql = "
+			SELECT
+				wp.theme_upgrades
+			FROM
+				{$wpdb->prefix}mainwp_wp wp
+			WHERE
+				wp.is_ignoreThemeUpdates = 0
+		";
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$results = $wpdb->get_results( $sql );
+
+		// Cache the results for 15 minutes.
+		wp_cache_set( $cache_key, $results, '', 300 ); // 300 = 5 minutes.
+	}
+
+	if ( empty( $results ) ) {
+		return;
+	}
+
+	// Retrieve sent notifications from transient.
+	$sent_notifications = get_transient( 'sprucely_sent_theme_notifications' );
+	if ( ! is_array( $sent_notifications ) ) {
+		$sent_notifications = array();
+	}
+
+	$unique_updates = array();
+	foreach ( $results as $result ) {
+		$theme_upgrades = json_decode( $result->theme_upgrades, true );
+		if ( is_array( $theme_upgrades ) ) {
+			foreach ( $theme_upgrades as $theme_slug => $theme_info ) {
+				if ( isset( $theme_info['update'] ) && ! empty( $theme_info['update'] ) ) {
+					$update_info = $theme_info['update'];
+					$unique_key  = $theme_slug . '|' . $update_info['new_version'];
+					if ( ! isset( $unique_updates[ $unique_key ] ) && ! isset( $sent_notifications[ $unique_key ] ) ) {
+						$unique_updates[ $unique_key ] = array(
+							'theme_name'    => $theme_info['Name'],
+							'new_version'   => $update_info['new_version'],
+							'changelog_url' => $update_info['url'],
+							'theme_uri'     => $update_info['url'],
+							'thumbnail_url' => sprucely_get_cached_thumbnail_url( $update_info['url'] ),
+							'description'   => $theme_info['Description'] ?? '',
+							'author'        => $theme_info['AuthorName'] ?? '',
+							'changelog'     => $update_info['sections']['changelog'] ?? '',
+						);
+					}
+				}
+			}
+		}
+	}
+
+	if ( ! empty( $unique_updates ) ) {
+		foreach ( $unique_updates as $key => $update ) {
+			if ( sprucely_send_discord_message( $update, 'MAINWP_THEME_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+				$sent_notifications[ $key ] = true; // Mark this notification as sent.
+			}
+			usleep( 500000 ); // Sleep for 0.5 seconds to avoid rate limiting.
+		}
+		// Store the updated sent notifications.
+		set_transient( 'sprucely_sent_theme_notifications', $sent_notifications, WEEK_IN_SECONDS );
 	}
 }
 
 register_deactivation_hook( __FILE__, 'sprucely_clear_scheduled_hook' );
 function sprucely_clear_scheduled_hook() {
-	wp_clear_scheduled_hook( 'sprucely_check_for_plugin_updates' );
+	wp_clear_scheduled_hook( 'sprucely_check_for_updates' );
 }
 
 function sprucely_get_cached_thumbnail_url( $url ) {
@@ -149,29 +226,36 @@ function sprucely_get_thumbnail_url( $url ) {
 	return ''; // Return an empty string if no image is found.
 }
 
-function sprucely_send_discord_message( $update ) {
-	if ( ! defined( 'MAINWP_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+function sprucely_send_discord_message( $update, $webhook_url_const ) {
+	if ( ! defined( $webhook_url_const ) ) {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( 'Discord webhook URL not defined.' );
 		return false;
 	}
-	$webhook_url = MAINWP_UPDATES_DISCORD_WEBHOOK_URL;
 
-	// Extract a summary of the changelog (first 800 characters)
-	$changelog_summary = wp_strip_all_tags( $update['changelog'] );
-	$changelog_summary = mb_substr( $changelog_summary, 0, 800 ) . '...';
+	$webhook_url = constant( $webhook_url_const );
+
+	$changelog_summary = '';
+	if ( ! empty( $update['changelog'] ) ) {
+		$changelog_summary = wp_strip_all_tags( $update['changelog'] );
+		$changelog_summary = mb_substr( $changelog_summary, 0, 850 ) . '...';
+		$changelog_summary = "**Changelog Summary:** $changelog_summary\n";
+	}
+
+	$description = $update['description'] ? "**Description:** {$update['description']}\n" : '';
+	$author      = $update['author'] ? "**Author:** {$update['author']}\n" : '';
 
 	$embed = array(
-		'title'       => $update['plugin_name'],
+		'title'       => $update['plugin_name'] ?? $update['theme_name'],
 		'description' => sprintf(
-			"**Version %s is available.**\n\n**Author:** %s\n**Description:** %s\n\n**Changelog Summary:** %s\n\n[View Full Changelog](%s)",
+			"**Version %s is available.**\n\n%s%s%s\n\n[View Full Changelog](%s)",
 			$update['new_version'],
-			$update['author'],
-			$update['description'],
+			$author,
+			$description,
 			$changelog_summary,
 			$update['changelog_url']
 		),
-		'url'         => $update['plugin_uri'],
+		'url'         => $update['plugin_uri'] ?? $update['theme_uri'],
 	);
 
 	if ( ! empty( $update['thumbnail_url'] ) ) {

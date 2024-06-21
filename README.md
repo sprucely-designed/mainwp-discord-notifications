@@ -42,7 +42,7 @@ To improve performance and reduce database load, the plugin uses caching:
 
 ## Usage
 
-Once installed and configured, the plugin will automatically check for updates every hour and send notifications to the specified Discord channel if updates are available.
+Once installed and configured, the plugin will automatically check for updates following your `mainwp_cronupdatescheck_action` cron schedule (with an hourly fallback) and send notifications to the specified Discord channel if updates are available.
 
 ### Notification Format
 

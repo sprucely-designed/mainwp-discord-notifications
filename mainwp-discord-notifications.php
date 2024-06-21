@@ -36,17 +36,23 @@ function sprucely_check_for_plugin_updates() {
 
 	if ( false === $results ) {
 		// Query to get plugin updates from the MainWP database, excluding ignored sites.
-		$sql = "
-			SELECT
-				wp.plugin_upgrades
-			FROM
-				{$wpdb->prefix}mainwp_wp wp
-			WHERE
-				wp.is_ignorePluginUpdates = 0
-		";
-
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$results = $wpdb->get_results( $sql );
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				'
+				SELECT
+					%s
+				FROM
+					%s wp
+				WHERE
+					%s = %d
+				',
+				'plugin_upgrades',
+				"{$wpdb->prefix}mainwp_wp",
+				'is_ignorePluginUpdates',
+				0
+			)
+		);
 
 		// Cache the results for 15 minutes.
 		wp_cache_set( $cache_key, $results, '', 300 ); // 300 = 5 minutes.
@@ -108,17 +114,23 @@ function sprucely_check_for_theme_updates() {
 
 	if ( false === $results ) {
 		// Query to get theme updates from the MainWP database, excluding ignored sites.
-		$sql = "
-			SELECT
-				wp.theme_upgrades
-			FROM
-				{$wpdb->prefix}mainwp_wp wp
-			WHERE
-				wp.is_ignoreThemeUpdates = 0
-		";
-
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$results = $wpdb->get_results( $sql );
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				'
+				SELECT
+					%s
+				FROM
+					%s wp
+				WHERE
+					%s = %d
+				',
+				'theme_upgrades',
+				"{$wpdb->prefix}mainwp_wp",
+				'is_ignoreThemeUpdates',
+				0
+			)
+		);
 
 		// Cache the results for 15 minutes.
 		wp_cache_set( $cache_key, $results, '', 300 ); // 300 = 5 minutes.

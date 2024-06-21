@@ -8,7 +8,7 @@
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  *
- * GitHub: https://github.com/sprucelydesigned/mainwp-discord-notifications
+ * GitHub Plugin URI: https://github.com/sprucelydesigned/mainwp-discord-notifications
  *
  * @package MainWP Discord Webhook Notifications
  */

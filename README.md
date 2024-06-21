@@ -4,7 +4,19 @@ MainWP Discord Webhook Notifications is a WordPress plugin that sends notificati
 
 ## Description
 
-This plugin helps you stay informed about plugin and theme updates on your MainWP child sites by sending notifications to a specified Discord channel via webhook.
+This plugin integrates with MainWP to monitor plugin and theme updates across all your connected child sites. When an update is detected, a notification is sent to a specified Discord webhook URL.
+
+### Data Retrieval
+
+- **Plugin Updates:** The plugin retrieves data from the `plugin_upgrades` column of the `wp_mainwp_wp` table, excluding sites with `is_ignorePluginUpdates` set to 1.
+- **Theme Updates:** The plugin retrieves data from the `theme_upgrades` column of the `wp_mainwp_wp` table, excluding sites with `is_ignoreThemeUpdates` set to 1.
+
+### Caching
+
+To improve performance and reduce database load, the plugin uses caching:
+- **Database Queries:** Results from database queries are cached for 15 minutes.
+- **Thumbnail URLs:** Fetched thumbnail URLs are cached for one week.
+- **Sent Notifications:** Notifications that have been sent are stored in a transient to prevent duplicate notifications, with a cache duration of one week.
 
 ## Installation
 

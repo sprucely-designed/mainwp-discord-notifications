@@ -3,7 +3,7 @@
  * Plugin Name: MainWP Discord Webhook Notifications
  * Description: Sends a message to a Discord server when a plugin or theme update is available.
  * Version: 1.0
- * Author: Sprucely Designed
+ * Author: Isaac @ Sprucely Designed <support@sprucely.net>
  * Author URI: https://www.sprucely.net
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -13,34 +13,34 @@
  * @package MainWP Discord Webhook Notifications
  */
 
-add_action( 'mainwp_child_plugin_activated', 'sprucely_setup_plugin_update_hook' );
-add_action( 'mainwp_cronupdatescheck_action', 'sprucely_check_for_updates' );
+add_action( 'mainwp_child_plugin_activated', 'sprucely_mwpdn_setup_plugin_update_hook' );
+add_action( 'mainwp_cronupdatescheck_action', 'sprucely_mwpdn_check_for_updates' );
 
 /**
  * Sets up the scheduled event for checking updates.
  */
-function sprucely_setup_plugin_update_hook() {
-	if ( ! wp_next_scheduled( 'sprucely_check_for_updates' ) ) {
-		wp_schedule_event( time(), 'hourly', 'sprucely_check_for_updates' );
+function sprucely_mwpdn_setup_plugin_update_hook() {
+	if ( ! wp_next_scheduled( 'sprucely_mwpdn_check_for_updates' ) ) {
+		wp_schedule_event( time(), 'hourly', 'sprucely_mwpdn_check_for_updates' );
 	}
 }
 
 /**
  * Checks for plugin and theme updates.
  */
-function sprucely_check_for_updates() {
-	sprucely_check_for_plugin_updates();
-	sprucely_check_for_theme_updates();
+function sprucely_mwpdn_check_for_updates() {
+	sprucely_mwpdn_check_for_plugin_updates();
+	sprucely_mwpdn_check_for_theme_updates();
 }
 
 /**
  * Checks for plugin updates and sends notifications if updates are available.
  */
-function sprucely_check_for_plugin_updates() {
+function sprucely_mwpdn_check_for_plugin_updates() {
 	global $wpdb;
 
 	// Check if cached results exist.
-	$cache_key = 'sprucely_plugin_updates';
+	$cache_key = 'sprucely_mwpdn_plugin_updates';
 	$results   = wp_cache_get( $cache_key );
 
 	if ( false === $results ) {
@@ -69,7 +69,7 @@ function sprucely_check_for_plugin_updates() {
 	}
 
 	// Retrieve sent notifications from transient.
-	$sent_notifications = get_transient( 'sprucely_sent_plugin_notifications' );
+	$sent_notifications = get_transient( 'sprucely_mwpdn_sent_plugin_notifications' );
 	if ( ! is_array( $sent_notifications ) ) {
 		$sent_notifications = array();
 	}
@@ -88,7 +88,7 @@ function sprucely_check_for_plugin_updates() {
 							'new_version'   => $update_info['new_version'],
 							'changelog_url' => $update_info['url'],
 							'plugin_uri'    => $plugin_info['PluginURI'],
-							'thumbnail_url' => sprucely_get_cached_thumbnail_url( $plugin_info['PluginURI'] ),
+							'thumbnail_url' => sprucely_mwpdn_get_cached_thumbnail_url( $plugin_info['PluginURI'] ),
 							'description'   => $plugin_info['Description'] ?? '',
 							'author'        => $plugin_info['AuthorName'] ?? '',
 							'changelog'     => $update_info['sections']['changelog'] ?? '',
@@ -101,24 +101,24 @@ function sprucely_check_for_plugin_updates() {
 
 	if ( ! empty( $unique_updates ) ) {
 		foreach ( $unique_updates as $key => $update ) {
-			if ( sprucely_send_discord_message( $update, 'MAINWP_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+			if ( sprucely_mwpdn_send_discord_message( $update, 'MAINWP_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
 				$sent_notifications[ $key ] = true; // Mark this notification as sent.
 			}
 			usleep( 500000 ); // Sleep for 0.5 seconds to avoid rate limiting.
 		}
 		// Store the updated sent notifications.
-		set_transient( 'sprucely_sent_plugin_notifications', $sent_notifications, WEEK_IN_SECONDS );
+		set_transient( 'sprucely_mwpdn_sent_plugin_notifications', $sent_notifications, WEEK_IN_SECONDS );
 	}
 }
 
 /**
  * Checks for theme updates and sends notifications if updates are available.
  */
-function sprucely_check_for_theme_updates() {
+function sprucely_mwpdn_check_for_theme_updates() {
 	global $wpdb;
 
 	// Check if cached results exist.
-	$cache_key = 'sprucely_theme_updates';
+	$cache_key = 'sprucely_mwpdn_theme_updates';
 	$results   = wp_cache_get( $cache_key );
 
 	if ( false === $results ) {
@@ -147,7 +147,7 @@ function sprucely_check_for_theme_updates() {
 	}
 
 	// Retrieve sent notifications from transient.
-	$sent_notifications = get_transient( 'sprucely_sent_theme_notifications' );
+	$sent_notifications = get_transient( 'sprucely_mwpdn_sent_theme_notifications' );
 	if ( ! is_array( $sent_notifications ) ) {
 		$sent_notifications = array();
 	}
@@ -166,7 +166,7 @@ function sprucely_check_for_theme_updates() {
 							'new_version'   => $update_info['new_version'],
 							'changelog_url' => $update_info['url'],
 							'theme_uri'     => $update_info['url'],
-							'thumbnail_url' => sprucely_get_cached_thumbnail_url( $update_info['url'] ),
+							'thumbnail_url' => sprucely_mwpdn_get_cached_thumbnail_url( $update_info['url'] ),
 							'description'   => $theme_info['Description'] ?? '',
 							'author'        => $theme_info['AuthorName'] ?? '',
 							'changelog'     => $update_info['sections']['changelog'] ?? '',
@@ -179,23 +179,23 @@ function sprucely_check_for_theme_updates() {
 
 	if ( ! empty( $unique_updates ) ) {
 		foreach ( $unique_updates as $key => $update ) {
-			if ( sprucely_send_discord_message( $update, 'MAINWP_THEME_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+			if ( sprucely_mwpdn_send_discord_message( $update, 'MAINWP_THEME_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
 				$sent_notifications[ $key ] = true; // Mark this notification as sent.
 			}
 			usleep( 500000 ); // Sleep for 0.5 seconds to avoid rate limiting.
 		}
 		// Store the updated sent notifications.
-		set_transient( 'sprucely_sent_theme_notifications', $sent_notifications, WEEK_IN_SECONDS );
+		set_transient( 'sprucely_mwpdn_sent_theme_notifications', $sent_notifications, WEEK_IN_SECONDS );
 	}
 }
 
 // Deactivation hook.
-register_deactivation_hook( __FILE__, 'sprucely_clear_scheduled_hook' );
+register_deactivation_hook( __FILE__, 'sprucely_mwpdn_clear_scheduled_hook' );
 /**
  * Clears the scheduled update check hook.
  */
-function sprucely_clear_scheduled_hook() {
-	wp_clear_scheduled_hook( 'sprucely_check_for_updates' );
+function sprucely_mwpdn_clear_scheduled_hook() {
+	wp_clear_scheduled_hook( 'sprucely_mwpdn_check_for_updates' );
 }
 
 /**
@@ -204,12 +204,12 @@ function sprucely_clear_scheduled_hook() {
  * @param string $url The URL of the site to get the thumbnail for.
  * @return string The thumbnail URL.
  */
-function sprucely_get_cached_thumbnail_url( $url ) {
-	$cache_key     = 'sprucely_thumbnail_url_' . md5( $url );
+function sprucely_mwpdn_get_cached_thumbnail_url( $url ) {
+	$cache_key     = 'sprucely_mwpdn_thumbnail_url_' . md5( $url );
 	$thumbnail_url = get_transient( $cache_key );
 
 	if ( false === $thumbnail_url ) {
-		$thumbnail_url = sprucely_get_thumbnail_url( $url );
+		$thumbnail_url = sprucely_mwpdn_get_thumbnail_url( $url );
 		set_transient( $cache_key, $thumbnail_url, WEEK_IN_SECONDS );
 	}
 
@@ -222,7 +222,7 @@ function sprucely_get_cached_thumbnail_url( $url ) {
  * @param string $url The URL of the site to get the thumbnail for.
  * @return string The thumbnail URL.
  */
-function sprucely_get_thumbnail_url( $url ) {
+function sprucely_mwpdn_get_thumbnail_url( $url ) {
 	$parsed_url = wp_parse_url( $url );
 	$base_url   = $parsed_url['scheme'] . '://' . $parsed_url['host'];
 
@@ -267,7 +267,7 @@ function sprucely_get_thumbnail_url( $url ) {
  * @param string $webhook_url_const The webhook URL constant name.
  * @return bool True if the message was sent successfully, false otherwise.
  */
-function sprucely_send_discord_message( $update, $webhook_url_const ) {
+function sprucely_mwpdn_send_discord_message( $update, $webhook_url_const ) {
 	if ( ! defined( $webhook_url_const ) ) {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( 'Discord webhook URL not defined.' );

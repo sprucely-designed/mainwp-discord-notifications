@@ -132,7 +132,7 @@ function sprucely_mwpdn_check_for_theme_updates() {
 				FROM
 					{$wpdb->prefix}mainwp_wp wp
 				WHERE
-					is_ignoreThemeUpgrades = %d
+					is_ignoreThemeUpdates = %d
 				",
 				0
 			)

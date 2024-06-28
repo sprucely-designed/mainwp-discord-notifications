@@ -47,6 +47,8 @@ function sprucely_mwpdn_check_for_plugin_updates() {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( 'Discord webhook URL for plugin updates not defined.' );
 		return;
+	} elseif ( ! defined( 'MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+		define( 'MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL', MAINWP_UPDATES_DISCORD_WEBHOOK_URL );
 	}
 	global $wpdb;
 
@@ -112,7 +114,7 @@ function sprucely_mwpdn_check_for_plugin_updates() {
 
 	if ( ! empty( $unique_updates ) ) {
 		foreach ( $unique_updates as $key => $update ) {
-			if ( sprucely_mwpdn_send_discord_message( $update, 'MAINWP_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+			if ( sprucely_mwpdn_send_discord_message( $update, 'MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
 				$sent_notifications[ $key ] = true; // Mark this notification as sent.
 			}
 			usleep( 500000 ); // Sleep for 0.5 seconds to avoid rate limiting.

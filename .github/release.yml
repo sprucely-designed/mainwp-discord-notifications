@@ -3,7 +3,7 @@ name: Tag and Release
 on:
   push:
     paths:
-      - "mainwp-discord-notifications.php" # Update this to the path of your main plugin file
+      - 'mainwp-discord-notifications.php'
 
 jobs:
   tag-and-release:
@@ -20,7 +20,36 @@ jobs:
           echo "Version extracted: $version"
           echo "::set-output name=version::$version"
 
+      - name: Get latest tag
+        id: get_latest_tag
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tags = await github.repos.listTags({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 1
+            });
+            const latestTag = tags.data.length > 0 ? tags.data[0].name : '';
+            console.log(`Latest tag: ${latestTag}`);
+            return { latest_tag: latestTag };
+
+      - name: Compare versions
+        id: compare_versions
+        run: |
+          latest_tag=${{ steps.get_latest_tag.outputs.latest_tag }}
+          version=${{ steps.extract_version.outputs.version }}
+          if [ -z "$latest_tag" ] || [ "$(printf '%s\n' "$latest_tag" "v$version" | sort -V | head -n1)" != "v$version" ]; then
+            echo "New version $version is greater than latest tag $latest_tag"
+            echo "::set-output name=should_tag::true"
+          else
+            echo "New version $version is not greater than latest tag $latest_tag"
+            echo "::set-output name=should_tag::false"
+          fi
+
       - name: Extract changelog
+        if: steps.compare_versions.outputs.should_tag == 'true'
         id: extract_changelog
         run: |
           version=${{ steps.extract_version.outputs.version }}
@@ -31,6 +60,7 @@ jobs:
           echo "::set-output name=changelog::$changelog"
 
       - name: Create tag
+        if: steps.compare_versions.outputs.should_tag == 'true'
         id: create_tag
         uses: actions/github-script@v3
         with:
@@ -38,27 +68,17 @@ jobs:
           script: |
             const version = '${{ steps.extract_version.outputs.version }}';
             const tagName = `v${version}`;
-            const { data: tags } = await github.repos.listTags({
+            await github.git.createRef({
               owner: context.repo.owner,
-              repo: context.repo.repo
+              repo: context.repo.repo,
+              ref: `refs/tags/${tagName}`,
+              sha: context.sha
             });
-            const tagExists = tags.find(tag => tag.name === tagName);
-            if (tagExists) {
-              console.log(`Tag ${tagName} already exists`);
-              core.setOutput("tag_exists", "true");
-            } else {
-              await github.git.createRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: `refs/tags/${tagName}`,
-                sha: context.sha
-              });
-              console.log(`Tag ${tagName} created`);
-              core.setOutput("tag_exists", "false");
-            }
+            console.log(`Tag ${tagName} created`);
+            core.setOutput("tag_exists", "false");
 
       - name: Create Release
-        if: steps.create_tag.outputs.tag_exists == 'false'
+        if: steps.compare_versions.outputs.should_tag == 'true'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

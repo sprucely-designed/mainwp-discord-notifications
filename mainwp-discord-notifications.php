@@ -303,7 +303,7 @@ function sprucely_mwpdn_convert_html_to_markdown( $html ) {
 	$markdown = preg_replace( '/<\/li>/', "\n", $markdown );
 
 	// Remove any remaining HTML tags.
-	$markdown = wp_strip_all_tags( $markdown );
+	// $markdown = wp_strip_all_tags( $markdown ); // Skip for debugging new potential tags.
 
 	return $markdown;
 }

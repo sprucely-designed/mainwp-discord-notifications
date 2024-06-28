@@ -294,13 +294,22 @@ function sprucely_mwpdn_convert_html_to_markdown( $html ) {
 	$markdown = preg_replace( '/<code>(.*?)<\/code>/', '`$1`', $markdown );
 	$markdown = preg_replace( '/<a(.*?)href="(.*?)"(.*?)>(.*?)<\/a>/', '[$4]($2)', $markdown );
 
+	// Convert heading tags to Markdown.
+	$markdown = preg_replace( '/<h1>(.*?)<\/h1>/', '# $1', $markdown );
+	$markdown = preg_replace( '/<h2>(.*?)<\/h2>/', '## $1', $markdown );
+	$markdown = preg_replace( '/<h3>(.*?)<\/h3>/', '### $1', $markdown );
+	$markdown = preg_replace( '/<h4>(.*?)<\/h4>/', '#### $1', $markdown );
+	$markdown = preg_replace( '/<h5>(.*?)<\/h5>/', '##### $1', $markdown );
+	$markdown = preg_replace( '/<h6>(.*?)<\/h6>/', '###### $1', $markdown );
+
+
 	// Convert list tags to Markdown.
 	$markdown = preg_replace( '/<ul>/', "\n", $markdown );
 	$markdown = preg_replace( '/<\/ul>/', "\n", $markdown );
 	$markdown = preg_replace( '/<ol>/', "\n", $markdown );
-	$markdown = preg_replace( '/<\/ol>/', "\n", $markdown );
+	$markdown = preg_replace( '/<\/ol>/', '', $markdown );
 	$markdown = preg_replace( '/<li>/', '- ', $markdown );
-	$markdown = preg_replace( '/<\/li>/', "\n", $markdown );
+	$markdown = preg_replace( '/<\/li>/', '', $markdown );
 
 	// Remove any remaining HTML tags.
 	// $markdown = wp_strip_all_tags( $markdown ); // Skip for debugging new potential tags.

@@ -44,6 +44,8 @@ function sprucely_mwpdn_check_for_updates() {
 function sprucely_mwpdn_check_for_plugin_updates() {
 	// Check if the required constants are defined, if not return.
 	if ( ! defined( 'MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL' ) && ! defined( 'MAINWP_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( 'Discord webhook URL for plugin updates not defined.' );
 		return;
 	}
 	global $wpdb;
@@ -126,6 +128,8 @@ function sprucely_mwpdn_check_for_plugin_updates() {
 function sprucely_mwpdn_check_for_theme_updates() {
 	// Check if the required constants are defined, if not return.
 	if ( ! defined( 'MAINWP_THEME_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( 'Discord webhook URL for theme updates not defined.' );
 		return;
 	}
 

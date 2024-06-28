@@ -316,6 +316,12 @@ function sprucely_mwpdn_convert_html_to_markdown( $html ) {
  * @return bool True if the message was sent successfully, false otherwise.
  */
 function sprucely_mwpdn_send_discord_message( $update, $webhook_url_const ) {
+	if ( ! defined( $webhook_url_const ) ) {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( 'Discord webhook URL not defined.' );
+		return false;
+	}
+
 	$webhook_url = constant( $webhook_url_const );
 
 	// Build the changelog summary if available.

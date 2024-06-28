@@ -1,6 +1,7 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [1.0.1] - 2024-06-27
+- Fixed incorrect column header for ignored theme updates to `is_ignoreThemeUpdates`. Thanks @rwsiv and @JosKlever for the report and PR.
 
 ## [1.0] - 2024-06-21
 

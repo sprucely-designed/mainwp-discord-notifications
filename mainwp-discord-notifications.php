@@ -1,18 +1,22 @@
 <?php
 /**
- * Plugin Name: MainWP Discord Webhook Notifications
+ * Plugin Name: Discord Webhook Notifications for MainWP
  * Description: Sends a message to a Discord server when a plugin or theme update is available.
  * Version: 1.1.0
- * Author: Isaac @ Sprucely Designed <support@sprucely.net>
+ * Author: Isaac @ Sprucely Designed
  * Author URI: https://www.sprucely.net
+ * Plugin URI: https://github.com/sprucely-designed/mainwp-discord-notifications
  * License: GPL3
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  *
  * GitHub Plugin URI: sprucely-designed/mainwp-discord-notifications
  * Primary Branch: main
  *
- * @package MainWP Discord Webhook Notifications
+ * @package Sprucely_MWP_Discord
  */
+
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
 
 add_action( 'mainwp_child_plugin_activated', 'sprucely_mwpdn_setup_plugin_update_hook' );
 add_action( 'mainwp_cronupdatescheck_action', 'sprucely_mwpdn_check_for_updates' );
@@ -343,3 +347,20 @@ function sprucely_mwpdn_send_discord_message( $update, $webhook_url_const ) {
 		return true;
 	}
 }
+
+/**
+ * Add a "Support" link to the plugin meta links.
+ *
+ * @param array  $links The existing plugin meta links.
+ * @param string $file  The plugin file.
+ * @return array The modified plugin meta links.
+ */
+function sprucely_mwpdn_add_support_meta_link( $links, $file ) {
+	if ( plugin_basename( __FILE__ ) === $file ) {
+		$support_link = '<a href="https://github.com/sprucely-designed/mainwp-discord-notifications/issues">' . __( 'Support', 'mainwp-discord-webhook-notifications' ) . '</a>';
+		$links[]      = $support_link;
+	}
+	return $links;
+}
+
+add_filter( 'plugin_row_meta', 'sprucely_mwpdn_add_support_meta_link', 10, 2 );

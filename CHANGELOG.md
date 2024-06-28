@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.1] - 2024-06-28
+- Renamed plugin to Discord Webhook Notifications for MainWP to clarify branding and added disclaimer that this project is not associated with MainWP or an official extension.
+- Added contributing guidelines file and updated readme
+- Updated plugin headers
+- Added support link to plugin meta
+
 ## [1.1.0] - 2024-06-27
 - Updated the plugin constant to `MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL` with backward compatibility for the `MAINWP_UPDATES_DISCORD_WEBHOOK_URL`. Thanks @JosKlever for the suggestion.
 - Added checks to ensure the respective constants are set before running the functions. If no constants are set, the plugin will not attempt to send any webhook data.

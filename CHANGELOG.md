@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.0] - 2024-06-27
+- Updated the plugin constant to `MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL` with backward compatibility for the `MAINWP_UPDATES_DISCORD_WEBHOOK_URL`. Thanks @JosKlever for the suggestion.
+- Added checks to ensure the respective constants are set before running the functions. If no constants are set, the plugin will not attempt to send any webhook data.
+
 ## [1.0.1] - 2024-06-27
 - Fixed incorrect column header for ignored theme updates to `is_ignoreThemeUpdates`. Thanks @rwsiv and @JosKlever for the report and PR.
 

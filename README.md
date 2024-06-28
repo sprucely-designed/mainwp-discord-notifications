@@ -36,7 +36,7 @@ To improve performance and reduce database load, the plugin uses caching:
    - Open your `wp-config.php` file.
    - Define the constants for the webhook URLs:
      ```php
-     define( 'MAINWP_UPDATES_DISCORD_WEBHOOK_URL', 'your_plugin_updates_webhook_url' );
+     define( 'MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL', 'your_plugin_updates_webhook_url' );
      define( 'MAINWP_THEME_UPDATES_DISCORD_WEBHOOK_URL', 'your_theme_updates_webhook_url' );
      ```
 

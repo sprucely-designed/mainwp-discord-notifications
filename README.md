@@ -24,7 +24,7 @@ To improve performance and reduce database load, the plugin uses caching:
 ## Installation
 
 1. **Download the Plugin:**
-   - [Download}(https://github.com/sprucely-designed/mainwp-discord-notifications/releases) the source code ZIP file from the latest release.
+   - [Download](https://github.com/sprucely-designed/mainwp-discord-notifications/releases) the source code ZIP file from the latest release.
 
 2. **Upload the Plugin:**
    - Go to your WordPress dashboard.

@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.1.3] - 2024-06-28
+- Added heading tags to markdown conversion
+
 ## [1.1.2] - 2024-06-28
 - Update .gitattributes to exclude .github directory and .gitattributes file from release zip
 - Added Github Actions workflow to automatically tag releases on version changes

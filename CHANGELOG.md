@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.2] - 2024-06-28
+- Update .gitattributes to exclude .github directory and .gitattributes file from release zip
+- Added Github Actions workflow to automatically tag releases on version changes.
+
 ## [1.1.1] - 2024-06-28
 - Renamed plugin to Discord Webhook Notifications for MainWP to clarify branding and added disclaimer that this project is not associated with MainWP or an official extension
 - Added contributing guidelines file and updated readme

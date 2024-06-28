@@ -24,7 +24,7 @@ To improve performance and reduce database load, the plugin uses caching:
 ## Installation
 
 1. **Download the Plugin:**
-   - Clone this repository or download the ZIP file from the GitHub repository.
+   - [Download}(https://github.com/sprucely-designed/mainwp-discord-notifications/releases) the source code ZIP file from the latest release.
 
 2. **Upload the Plugin:**
    - Go to your WordPress dashboard.
@@ -67,7 +67,7 @@ Want to make MainWP better for everyone by contributing to Discord Notifications
 
 ## License
 
-This plugin is licensed under the GPL2. See the [LICENSE](LICENSE) file for more details.
+This plugin is licensed under the GPL3. See the [LICENSE](LICENSE) file for more details.
 
 ## Support
 

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Discord Webhook Notifications for MainWP
  * Description: Sends a message to a Discord server when a plugin or theme update is available.
- * Version: 1.1.1
+ * Version: 1.1.2
  * Author: Isaac @ Sprucely Designed
  * Author URI: https://www.sprucely.net
  * Plugin URI: https://github.com/sprucely-designed/mainwp-discord-notifications

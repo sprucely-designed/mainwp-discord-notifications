@@ -1,0 +1,70 @@
+name: Tag and Release
+
+on:
+  push:
+    paths:
+      - "mainwp-discord-notifications.php" # Update this to the path of your main plugin file
+
+jobs:
+  tag-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Extract version
+        id: extract_version
+        run: |
+          version=$(grep -i 'Version:' mainwp-discord-notifications.php | awk '{print $2}')
+          echo "Version extracted: $version"
+          echo "::set-output name=version::$version"
+
+      - name: Extract changelog
+        id: extract_changelog
+        run: |
+          version=${{ steps.extract_version.outputs.version }}
+          changelog=$(awk "/## \\[${version}\\] - /,/^## \\[/" CHANGELOG.md | sed '$d')
+          changelog="${changelog//'%'/'%25'}"
+          changelog="${changelog//$'\n'/'%0A'}"
+          changelog="${changelog//$'\r'/'%0D'}"
+          echo "::set-output name=changelog::$changelog"
+
+      - name: Create tag
+        id: create_tag
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = '${{ steps.extract_version.outputs.version }}';
+            const tagName = `v${version}`;
+            const { data: tags } = await github.repos.listTags({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            const tagExists = tags.find(tag => tag.name === tagName);
+            if (tagExists) {
+              console.log(`Tag ${tagName} already exists`);
+              core.setOutput("tag_exists", "true");
+            } else {
+              await github.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `refs/tags/${tagName}`,
+                sha: context.sha
+              });
+              console.log(`Tag ${tagName} created`);
+              core.setOutput("tag_exists", "false");
+            }
+
+      - name: Create Release
+        if: steps.create_tag.outputs.tag_exists == 'false'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.extract_version.outputs.version }}
+          release_name: Release ${{ steps.extract_version.outputs.version }}
+          body: ${{ steps.extract_changelog.outputs.changelog }}
+          draft: false
+          prerelease: false

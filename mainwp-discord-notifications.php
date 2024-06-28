@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Discord Webhook Notifications for MainWP
  * Description: Sends a message to a Discord server when a plugin or theme update is available.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Isaac @ Sprucely Designed
  * Author URI: https://www.sprucely.net
  * Plugin URI: https://github.com/sprucely-designed/mainwp-discord-notifications
@@ -95,8 +95,8 @@ function sprucely_mwpdn_check_for_plugin_updates() {
 						$unique_updates[ $unique_key ] = array(
 							'plugin_name'   => $plugin_info['Name'],
 							'new_version'   => $update_info['new_version'],
-							'changelog_url' => $update_info['url'],
-							'plugin_uri'    => $plugin_info['PluginURI'],
+							'changelog_url' => $update_info['url'] ?? '',
+							'plugin_uri'    => $plugin_info['PluginURI'] ?? '',
 							'thumbnail_url' => sprucely_mwpdn_get_cached_thumbnail_url( $plugin_info['PluginURI'] ),
 							'description'   => $plugin_info['Description'] ?? '',
 							'author'        => $plugin_info['AuthorName'] ?? '',
@@ -178,8 +178,8 @@ function sprucely_mwpdn_check_for_theme_updates() {
 						$unique_updates[ $unique_key ] = array(
 							'theme_name'    => $theme_info['Name'],
 							'new_version'   => $update_info['new_version'],
-							'changelog_url' => $update_info['url'],
-							'theme_uri'     => $update_info['url'],
+							'changelog_url' => $update_info['url'] ?? '',
+							'theme_uri'     => $update_info['url'] ?? '',
 							'thumbnail_url' => sprucely_mwpdn_get_cached_thumbnail_url( $update_info['url'] ),
 							'description'   => $theme_info['Description'] ?? '',
 							'author'        => $theme_info['AuthorName'] ?? '',
@@ -277,7 +277,7 @@ function sprucely_mwpdn_get_thumbnail_url( $url ) {
 /**
  * Sends a message to the Discord webhook URL.
  *
- * @param array  $update         The update information.
+ * @param array  $update            The update information.
  * @param string $webhook_url_const The webhook URL constant name.
  * @return bool True if the message was sent successfully, false otherwise.
  */
@@ -290,6 +290,7 @@ function sprucely_mwpdn_send_discord_message( $update, $webhook_url_const ) {
 
 	$webhook_url = constant( $webhook_url_const );
 
+	// Build the changelog summary if available.
 	$changelog_summary = '';
 	if ( ! empty( $update['changelog'] ) ) {
 		$changelog_summary = wp_strip_all_tags( $update['changelog'] );
@@ -297,21 +298,27 @@ function sprucely_mwpdn_send_discord_message( $update, $webhook_url_const ) {
 		$changelog_summary = "**Changelog Summary:** $changelog_summary\n";
 	}
 
-	$description = ! empty( $update['description'] ) ? "**Description:** {$update['description']}\n" : '';
-	$author      = ! empty( $update['author'] ) ? "**Author:** {$update['author']}\n" : '';
+	// Build the description parts if available.
+	$description   = ! empty( $update['description'] ) ? "**Description:** {$update['description']}\n" : '';
+	$author        = ! empty( $update['author'] ) ? "**Author:** {$update['author']}\n" : '';
+	$changelog_url = ! empty( $update['changelog_url'] ) ? "[View Full Changelog]({$update['changelog_url']})" : '';
 
+	// Combine all parts of the description.
+	$embed_description  = "**Version {$update['new_version']} is available.**\n\n";
+	$embed_description .= $author;
+	$embed_description .= $description;
+	$embed_description .= $changelog_summary;
+	$embed_description .= $changelog_url ? "\n\n{$changelog_url}" : '';
+
+	// Build the embed array.
 	$embed = array(
 		'title'       => $update['plugin_name'] ?? $update['theme_name'],
-		'description' => sprintf(
-			"**Version %s is available.**\n\n%s%s%s\n\n[View Full Changelog](%s)",
-			$update['new_version'],
-			$author,
-			$description,
-			$changelog_summary,
-			$update['changelog_url']
-		),
-		'url'         => $update['plugin_uri'] ?? $update['theme_uri'],
+		'description' => $embed_description,
 	);
+
+	if ( ! empty( $update['plugin_uri'] ) || ! empty( $update['theme_uri'] ) ) {
+		$embed['url'] = $update['plugin_uri'] ?? $update['theme_uri'];
+	}
 
 	if ( ! empty( $update['thumbnail_url'] ) ) {
 		$embed['thumbnail'] = array(

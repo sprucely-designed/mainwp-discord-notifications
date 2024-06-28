@@ -279,6 +279,36 @@ function sprucely_mwpdn_get_thumbnail_url( $url ) {
 }
 
 /**
+ * Converts HTML to Discord-supported Markdown.
+ *
+ * @param string $html The HTML content.
+ * @return string The Markdown content.
+ */
+function sprucely_mwpdn_convert_html_to_markdown( $html ) {
+	// Convert common HTML tags to Markdown.
+	$markdown = $html;
+	$markdown = preg_replace( '/<strong>(.*?)<\/strong>/', '**$1**', $markdown );
+	$markdown = preg_replace( '/<b>(.*?)<\/b>/', '**$1**', $markdown );
+	$markdown = preg_replace( '/<em>(.*?)<\/em>/', '*$1*', $markdown );
+	$markdown = preg_replace( '/<i>(.*?)<\/i>/', '*$1*', $markdown );
+	$markdown = preg_replace( '/<code>(.*?)<\/code>/', '`$1`', $markdown );
+	$markdown = preg_replace( '/<a(.*?)href="(.*?)"(.*?)>(.*?)<\/a>/', '[$4]($2)', $markdown );
+
+	// Convert list tags to Markdown.
+	$markdown = preg_replace( '/<ul>/', "\n", $markdown );
+	$markdown = preg_replace( '/<\/ul>/', "\n", $markdown );
+	$markdown = preg_replace( '/<ol>/', "\n", $markdown );
+	$markdown = preg_replace( '/<\/ol>/', "\n", $markdown );
+	$markdown = preg_replace( '/<li>/', '- ', $markdown );
+	$markdown = preg_replace( '/<\/li>/', "\n", $markdown );
+
+	// Remove any remaining HTML tags.
+	$markdown = wp_strip_all_tags( $markdown );
+
+	return $markdown;
+}
+
+/**
  * Sends a message to the Discord webhook URL.
  *
  * @param array  $update            The update information.
@@ -286,25 +316,19 @@ function sprucely_mwpdn_get_thumbnail_url( $url ) {
  * @return bool True if the message was sent successfully, false otherwise.
  */
 function sprucely_mwpdn_send_discord_message( $update, $webhook_url_const ) {
-	if ( ! defined( $webhook_url_const ) ) {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( 'Discord webhook URL not defined.' );
-		return false;
-	}
-
 	$webhook_url = constant( $webhook_url_const );
 
 	// Build the changelog summary if available.
 	$changelog_summary = '';
 	if ( ! empty( $update['changelog'] ) ) {
-		$changelog_summary = wp_strip_all_tags( $update['changelog'] );
+		$changelog_summary = sprucely_mwpdn_convert_html_to_markdown( $update['changelog'] );
 		$changelog_summary = mb_substr( $changelog_summary, 0, 850 ) . '...';
 		$changelog_summary = "**Changelog Summary:** $changelog_summary\n";
 	}
 
 	// Build the description parts if available.
-	$description   = ! empty( $update['description'] ) ? "**Description:** {$update['description']}\n" : '';
-	$author        = ! empty( $update['author'] ) ? "**Author:** {$update['author']}\n" : '';
+	$description   = ! empty( $update['description'] ) ? '**Description:** ' . sprucely_mwpdn_convert_html_to_markdown( $update['description'] ) . "\n" : '';
+	$author        = ! empty( $update['author'] ) ? '**Author:** ' . sprucely_mwpdn_convert_html_to_markdown( $update['author'] ) . "\n" : '';
 	$changelog_url = ! empty( $update['changelog_url'] ) ? "[View Full Changelog]({$update['changelog_url']})" : '';
 
 	// Combine all parts of the description.

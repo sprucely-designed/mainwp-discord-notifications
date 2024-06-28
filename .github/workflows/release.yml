@@ -20,71 +20,44 @@ jobs:
           echo "Version extracted: $version"
           echo "::set-output name=version::$version"
 
-      - name: Get latest tag
-        id: get_latest_tag
-        uses: actions/github-script@v3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const tags = await github.repos.listTags({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 1
-            });
-            const latestTag = tags.data.length > 0 ? tags.data[0].name : '';
-            console.log(`Latest tag: ${latestTag}`);
-            return { latest_tag: latestTag };
-
-      - name: Compare versions
-        id: compare_versions
-        run: |
-          latest_tag=${{ steps.get_latest_tag.outputs.latest_tag }}
-          version=${{ steps.extract_version.outputs.version }}
-          if [ -z "$latest_tag" ] || [ "$(printf '%s\n' "$latest_tag" "v$version" | sort -V | head -n1)" != "v$version" ]; then
-            echo "New version $version is greater than latest tag $latest_tag"
-            echo "::set-output name=should_tag::true"
-          else
-            echo "New version $version is not greater than latest tag $latest_tag"
-            echo "::set-output name=should_tag::false"
-          fi
-
-      - name: Extract changelog
-        if: steps.compare_versions.outputs.should_tag == 'true'
-        id: extract_changelog
-        run: |
-          version=${{ steps.extract_version.outputs.version }}
-          changelog=$(awk "/## \\[${version}\\] - /,/^## \\[/" CHANGELOG.md | sed '$d')
-          changelog="${changelog//'%'/'%25'}"
-          changelog="${changelog//$'\n'/'%0A'}"
-          changelog="${changelog//$'\r'/'%0D'}"
-          echo "::set-output name=changelog::$changelog"
-
       - name: Create tag
-        if: steps.compare_versions.outputs.should_tag == 'true'
         id: create_tag
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const version = '${{ steps.extract_version.outputs.version }}';
+            const version = process.env.VERSION;
             const tagName = `v${version}`;
-            await github.git.createRef({
+            const { data: tags } = await github.repos.listTags({
               owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/tags/${tagName}`,
-              sha: context.sha
+              repo: context.repo.repo
             });
-            console.log(`Tag ${tagName} created`);
-            core.setOutput("tag_exists", "false");
+            const tagExists = tags.find(tag => tag.name === tagName);
+            if (tagExists) {
+              console.log(`Tag ${tagName} already exists`);
+              return { tag_exists: "true" };
+            } else {
+              await github.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `refs/tags/${tagName}`,
+                sha: context.sha
+              });
+              console.log(`Tag ${tagName} created`);
+              return { tag_exists: "false" };
+            }
 
       - name: Create Release
-        if: steps.compare_versions.outputs.should_tag == 'true'
+        if: steps.create_tag.outputs.tag_exists == 'false'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.extract_version.outputs.version }}
+          tag_name: v${{ steps.extract_version.outputs.version }}
           release_name: Release ${{ steps.extract_version.outputs.version }}
-          body: ${{ steps.extract_changelog.outputs.changelog }}
           draft: false
           prerelease: false
+          body: |
+            ## [${{ steps.extract_version.outputs.version }}] - $(date +'%Y-%m-%d')
+            - Updated plugin version to ${{ steps.extract_version.outputs.version }}
+            - Include the changes from the appropriate section of the changelog here.

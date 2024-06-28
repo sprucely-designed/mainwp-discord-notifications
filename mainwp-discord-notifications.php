@@ -5,8 +5,8 @@
  * Version: 1.0.1
  * Author: Isaac @ Sprucely Designed <support@sprucely.net>
  * Author URI: https://www.sprucely.net
- * License: GPL2
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * License: GPL3
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  *
  * GitHub Plugin URI: https://github.com/sprucelydesigned/mainwp-discord-notifications
  * Primary Branch: main

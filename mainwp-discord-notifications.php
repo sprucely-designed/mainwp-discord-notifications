@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Discord Webhook Notifications for MainWP
  * Description: Sends a message via webhook to a Discord server channel when a plugin or theme update is available.
- * Version: 1.2.2
+ * Version: 1.2.0
  * Author: Isaac @ Sprucely Designed
  * Author URI: https://www.sprucely.net
  * Plugin URI: https://github.com/sprucely-designed/mainwp-discord-notifications
@@ -24,17 +24,17 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Define plugin version.
  */
-define( 'MAINWP_DISCORD_VERSION', '1.2.0' );
+define( 'SPRUCELY_MWPDN_VERSION', '1.2.0' );
 
 /**
  * Define plugin directory path.
  */
-define( 'MAINWP_DISCORD_DIR', plugin_dir_path( __FILE__ ) );
+define( 'SPRUCELY_MWPDN_DIR', plugin_dir_path( __FILE__ ) );
 
 /**
  * Include the core class responsible for setting up the plugin.
  */
-require_once MAINWP_DISCORD_DIR . 'includes/class-mwpdn-main.php';
+require_once SPRUCELY_MWPDN_DIR . 'includes/class-main.php';
 
 // Run the plugin.
-Sprucely\MainWP_Discord\Main::get_instance();
+Sprucely_MWPDN::get_instance();

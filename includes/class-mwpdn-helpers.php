@@ -185,15 +185,15 @@ class Helpers {
 		}
 	}
 
-		/**
-		 * Query the MainWP database for updates.
-		 *
-		 * @param string $type The type of update (plugin or theme).
-		 * @param string $table_name The table name.
-		 * @param string $column_name The column name.
-		 * @param string $ignore_column The ignore column name.
-		 * @return array The query results.
-		 */
+	/**
+	 * Query the MainWP database for updates.
+	 *
+	 * @param string $type The type of update (plugin or theme).
+	 * @param string $table_name The table name.
+	 * @param string $column_name The column name.
+	 * @param string $ignore_column The ignore column name.
+	 * @return array The query results.
+	 */
 	public static function query_mainwp_db( string $type, string $table_name, string $column_name, string $ignore_column ): array {
 		global $wpdb;
 

@@ -77,6 +77,8 @@ class Theme_Updates {
 	 * Check for theme updates and send notifications if updates are available.
 	 */
 	public function check_for_theme_updates() {
+		global $wpdb;
+
 		if ( empty( $this->webhook_urls['theme_updates'] ) ) {
 			return;
 		}

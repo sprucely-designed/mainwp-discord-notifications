@@ -81,29 +81,12 @@ class Theme_Updates {
 			return;
 		}
 
-		global $wpdb;
-
-		$cache_key = 'sprucely_mwpdn_theme_updates';
-		$results   = wp_cache_get( $cache_key );
-
-		if ( false === $results ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$results = $wpdb->get_results(
-				$wpdb->prepare(
-					"
-                    SELECT
-                        theme_upgrades
-                    FROM
-                        {$wpdb->prefix}mainwp_wp wp
-                    WHERE
-                        is_ignoreThemeUpdates = %d
-                    ",
-					0
-				)
-			);
-
-			wp_cache_set( $cache_key, $results, '', 300 );
-		}
+		$results = Helpers::query_mainwp_db(
+			'theme',
+			$wpdb->prefix . 'mainwp_wp',
+			'theme_upgrades',
+			'is_ignoreThemeUpdates'
+		);
 
 		if ( empty( $results ) ) {
 			return;

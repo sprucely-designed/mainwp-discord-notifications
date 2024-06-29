@@ -13,12 +13,12 @@ namespace Sprucely\MainWP_Discord;
 class Helpers {
 
 	/**
-	 * Get the cached thumbnail URL for a given URL.
+	 * Get cached thumbnail URL for a given URL.
 	 *
 	 * @param string $url The URL of the site to get the thumbnail for.
 	 * @return string The thumbnail URL.
 	 */
-	public static function get_cached_thumbnail_url( $url ) {
+	public static function get_cached_thumbnail_url( string $url ): string {
 		$cache_key     = 'sprucely_mwpdn_thumbnail_url_' . md5( $url );
 		$thumbnail_url = get_transient( $cache_key );
 
@@ -36,7 +36,7 @@ class Helpers {
 	 * @param string $url The URL of the site to get the thumbnail for.
 	 * @return string The thumbnail URL.
 	 */
-	public static function get_thumbnail_url( $url ) {
+	public static function get_thumbnail_url( string $url ): string {
 		$parsed_url = wp_parse_url( $url );
 		$base_url   = $parsed_url['scheme'] . '://' . $parsed_url['host'];
 
@@ -80,7 +80,7 @@ class Helpers {
 	 * @param string $html The HTML content.
 	 * @return string The Markdown content.
 	 */
-	public static function convert_html_to_markdown( $html ) {
+	public static function convert_html_to_markdown( string $html ): string {
 		// Convert common HTML tags to Markdown.
 		$markdown = $html;
 		$markdown = preg_replace( '/<strong>(.*?)<\/strong>/', '**$1**', $markdown );
@@ -107,7 +107,7 @@ class Helpers {
 		$markdown = preg_replace( '/<\/li>/', '', $markdown );
 
 		// Remove any remaining HTML tags.
-		// $markdown = wp_strip_all_tags( $markdown ); // Skip for debugging new potential tags.
+		$markdown = wp_strip_all_tags( $markdown );
 
 		return $markdown;
 	}
@@ -119,7 +119,7 @@ class Helpers {
 	 * @param string $webhook_url  The webhook URL.
 	 * @return bool True if the message was sent successfully, false otherwise.
 	 */
-	public static function send_discord_message( $update, $webhook_url ) {
+	public static function send_discord_message( array $update, string $webhook_url ): bool {
 		// Build the changelog summary if available.
 		$changelog_summary = '';
 		if ( ! empty( $update['changelog'] ) ) {
@@ -183,5 +183,45 @@ class Helpers {
 			}
 			return true;
 		}
+	}
+
+		/**
+		 * Query the MainWP database for updates.
+		 *
+		 * @param string $type The type of update (plugin or theme).
+		 * @param string $table_name The table name.
+		 * @param string $column_name The column name.
+		 * @param string $ignore_column The ignore column name.
+		 * @return array The query results.
+		 */
+	public static function query_mainwp_db( string $type, string $table_name, string $column_name, string $ignore_column ): array {
+		global $wpdb;
+
+		$cache_key = 'sprucely_mwpdn_' . $type . '_updates';
+		$results   = wp_cache_get( $cache_key );
+
+		if ( false === $results ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					'
+					SELECT
+						%s
+					FROM
+						%s wp
+					WHERE
+						%s = %d
+					',
+					$column_name,
+					$table_name,
+					$ignore_column,
+					0
+				)
+			);
+
+			wp_cache_set( $cache_key, $results, '', 300 ); // Cache for 5 minutes.
+		}
+
+		return $results ?: array();
 	}
 }

@@ -77,6 +77,8 @@ class Plugin_Updates {
 	 * Check for plugin updates and send notifications if updates are available.
 	 */
 	public function check_for_plugin_updates() {
+		global $wpdb;
+
 		if ( empty( $this->webhook_urls['plugin_updates'] ) ) {
 			return;
 		}

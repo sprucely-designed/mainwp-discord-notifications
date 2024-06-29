@@ -2,18 +2,24 @@
 /**
  * The main plugin class.
  *
- * @package Sprucely_MWP_Discord
+ * @package Sprucely_MainWP_Discord
  */
 
+namespace Sprucely\MainWP_Discord;
+
+use Sprucely\MainWP_Discord\Plugin_Updates;
+use Sprucely\MainWP_Discord\Theme_Updates;
+use Sprucely\MainWP_Discord\Helpers;
+
 /**
- * Main plugin class for Sprucely_MWP_Discord.
+ * Main plugin class for Sprucely_MainWP_Discord.
  */
-class Sprucely_MWPDN {
+class Main {
 
 	/**
 	 * Singleton instance of the class.
 	 *
-	 * @var Sprucely_MWPDN|null
+	 * @var Main|null
 	 */
 	private static $instance = null;
 
@@ -38,7 +44,7 @@ class Sprucely_MWPDN {
 	/**
 	 * Get the singleton instance of the class.
 	 *
-	 * @return Sprucely_MWPDN
+	 * @return Main
 	 */
 	public static function get_instance() {
 		if ( null === self::$instance ) {
@@ -65,17 +71,17 @@ class Sprucely_MWPDN {
 	 * Load the required dependencies for this plugin.
 	 */
 	private function load_dependencies() {
-		require_once SPRUCELY_MWPDN_DIR . 'includes/class-plugin-updates.php';
-		require_once SPRUCELY_MWPDN_DIR . 'includes/class-theme-updates.php';
-		require_once SPRUCELY_MWPDN_DIR . 'includes/class-helpers.php';
+		require_once MAINWP_DISCORD_DIR . 'includes/class-mwpdn-plugin-updates.php';
+		require_once MAINWP_DISCORD_DIR . 'includes/class-mwpdn-theme-updates.php';
+		require_once MAINWP_DISCORD_DIR . 'includes/class-mwpdn-helpers.php';
 	}
 
 	/**
 	 * Initialize the classes for handling plugin and theme updates.
 	 */
 	private function initialize_classes() {
-		Sprucely_MWPDN_Plugin_Updates::get_instance()->set_webhook_urls( $this->webhook_urls );
-		Sprucely_MWPDN_Theme_Updates::get_instance()->set_webhook_urls( $this->webhook_urls );
+		Plugin_Updates::get_instance()->set_webhook_urls( $this->webhook_urls );
+		Theme_Updates::get_instance()->set_webhook_urls( $this->webhook_urls );
 	}
 
 	/**

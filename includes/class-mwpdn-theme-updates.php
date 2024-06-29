@@ -2,20 +2,20 @@
 /**
  * Handles theme updates for Discord Webhook Notifications for MainWP.
  *
- * @package Sprucely_MWP_Discord
+ * @package Sprucely_MainWP_Discord
  */
 
+namespace Sprucely\MainWP_Discord;
+
 /**
- * Class Sprucely_MWPDN_Theme_Updates
- *
- * This class handles the theme updates and sends notifications if updates are available.
+ * Class Theme_Updates
  */
-class Sprucely_MWPDN_Theme_Updates {
+class Theme_Updates {
 
 	/**
 	 * Singleton instance of the class.
 	 *
-	 * @var Sprucely_MWPDN_Theme_Updates|null
+	 * @var Theme_Updates|null
 	 */
 	private static $instance = null;
 
@@ -29,7 +29,7 @@ class Sprucely_MWPDN_Theme_Updates {
 	/**
 	 * Constructor.
 	 *
-	 * Sets up the hooks.
+	 * Sets up the theme update hooks.
 	 */
 	private function __construct() {
 		$this->setup_hooks();
@@ -38,7 +38,7 @@ class Sprucely_MWPDN_Theme_Updates {
 	/**
 	 * Get the singleton instance of the class.
 	 *
-	 * @return Sprucely_MWPDN_Theme_Updates
+	 * @return Theme_Updates
 	 */
 	public static function get_instance() {
 		if ( null === self::$instance ) {
@@ -50,7 +50,7 @@ class Sprucely_MWPDN_Theme_Updates {
 	/**
 	 * Set the webhook URLs.
 	 *
-	 * @param array $webhook_urls Array of webhook URLs.
+	 * @param array $webhook_urls The webhook URLs.
 	 */
 	public function set_webhook_urls( $webhook_urls ) {
 		$this->webhook_urls = $webhook_urls;
@@ -128,7 +128,7 @@ class Sprucely_MWPDN_Theme_Updates {
 								'new_version'   => $update_info['new_version'],
 								'changelog_url' => $update_info['url'] ?? '',
 								'theme_uri'     => $update_info['url'] ?? '',
-								'thumbnail_url' => Sprucely_MWPDN_Helpers::get_cached_thumbnail_url( $update_info['url'] ),
+								'thumbnail_url' => Helpers::get_cached_thumbnail_url( $update_info['url'] ),
 								'description'   => $theme_info['Description'] ?? '',
 								'author'        => $theme_info['AuthorName'] ?? '',
 								'changelog'     => $update_info['sections']['changelog'] ?? '',
@@ -141,10 +141,10 @@ class Sprucely_MWPDN_Theme_Updates {
 
 		if ( ! empty( $unique_updates ) ) {
 			foreach ( $unique_updates as $key => $update ) {
-				if ( Sprucely_MWPDN_Helpers::send_discord_message( $update, $this->webhook_urls['theme_updates'] ) ) {
+				if ( Helpers::send_discord_message( $update, $this->webhook_urls['theme_updates'] ) ) {
 					$sent_notifications[ $key ] = true;
 				}
-				usleep( 500000 ); // Sleep for 0.5 seconds to avoid rate limiting.
+				usleep( 500000 );
 			}
 
 			set_transient( 'sprucely_mwpdn_sent_theme_notifications', $sent_notifications, WEEK_IN_SECONDS );

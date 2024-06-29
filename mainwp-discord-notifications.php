@@ -15,7 +15,7 @@
  * GitHub Plugin URI: https://github.com/sprucely-designed/mainwp-discord-notifications
  * Primary Branch: main
  *
- * @package Sprucely_MWP_Discord
+ * @package Sprucely_MainWP_Discord
  */
 
 // Exit if accessed directly.
@@ -24,17 +24,17 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Define plugin version.
  */
-define( 'SPRUCELY_MWPDN_VERSION', '1.2.0' );
+define( 'MAINWP_DISCORD_VERSION', '1.2.0' );
 
 /**
  * Define plugin directory path.
  */
-define( 'SPRUCELY_MWPDN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'MAINWP_DISCORD_DIR', plugin_dir_path( __FILE__ ) );
 
 /**
  * Include the core class responsible for setting up the plugin.
  */
-require_once SPRUCELY_MWPDN_DIR . 'includes/class-main.php';
+require_once MAINWP_DISCORD_DIR . 'includes/class-mwpdn-main.php';
 
 // Run the plugin.
-Sprucely_MWPDN::get_instance();
+Sprucely\MainWP_Discord\Main::get_instance();

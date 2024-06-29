@@ -2,21 +2,21 @@
 /**
  * Helper functions for Discord Webhook Notifications for MainWP.
  *
- * @package Sprucely_MWP_Discord
+ * @package Sprucely_MainWP_Discord
  */
+
+namespace Sprucely\MainWP_Discord;
 
 /**
- * Class Sprucely_MWPDN_Helpers
- *
- * This class provides various helper functions used in the plugin.
+ * Class Helpers
  */
-class Sprucely_MWPDN_Helpers {
+class Helpers {
 
 	/**
-	 * Get the cached thumbnail URL.
+	 * Get the cached thumbnail URL for a given URL.
 	 *
-	 * @param string $url The URL to fetch the thumbnail for.
-	 * @return string The cached thumbnail URL.
+	 * @param string $url The URL of the site to get the thumbnail for.
+	 * @return string The thumbnail URL.
 	 */
 	public static function get_cached_thumbnail_url( $url ) {
 		$cache_key     = 'sprucely_mwpdn_thumbnail_url_' . md5( $url );
@@ -33,7 +33,7 @@ class Sprucely_MWPDN_Helpers {
 	/**
 	 * Get the thumbnail URL from the site's HTML.
 	 *
-	 * @param string $url The URL to fetch the thumbnail for.
+	 * @param string $url The URL of the site to get the thumbnail for.
 	 * @return string The thumbnail URL.
 	 */
 	public static function get_thumbnail_url( $url ) {
@@ -48,7 +48,7 @@ class Sprucely_MWPDN_Helpers {
 
 		$html = wp_remote_retrieve_body( $response );
 		libxml_use_internal_errors( true ); // Handle HTML parsing errors gracefully.
-		$dom = new DOMDocument();
+		$dom = new \DOMDocument();
 		$dom->loadHTML( $html );
 
 		// Search for Open Graph image tags and standard favicon links.
@@ -75,7 +75,7 @@ class Sprucely_MWPDN_Helpers {
 	}
 
 	/**
-	 * Convert HTML content to Discord-supported Markdown.
+	 * Convert HTML to Discord-supported Markdown.
 	 *
 	 * @param string $html The HTML content.
 	 * @return string The Markdown content.
@@ -107,7 +107,7 @@ class Sprucely_MWPDN_Helpers {
 		$markdown = preg_replace( '/<\/li>/', '', $markdown );
 
 		// Remove any remaining HTML tags.
-		$markdown = wp_strip_all_tags( $markdown );
+		// $markdown = wp_strip_all_tags( $markdown ); // Skip for debugging new potential tags.
 
 		return $markdown;
 	}
@@ -116,7 +116,7 @@ class Sprucely_MWPDN_Helpers {
 	 * Send a message to the Discord webhook URL.
 	 *
 	 * @param array  $update       The update information.
-	 * @param string $webhook_url The webhook URL.
+	 * @param string $webhook_url  The webhook URL.
 	 * @return bool True if the message was sent successfully, false otherwise.
 	 */
 	public static function send_discord_message( $update, $webhook_url ) {

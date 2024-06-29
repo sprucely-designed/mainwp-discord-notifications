@@ -18,6 +18,13 @@
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
 
+// Global variable to hold webhook URLs.
+global $sprucely_mwpdn_webhook_urls;
+$sprucely_mwpdn_webhook_urls = array(
+	'plugin_updates' => '',
+	'theme_updates'  => '',
+);
+
 add_action( 'mainwp_child_plugin_activated', 'sprucely_mwpdn_setup_plugin_update_hook' );
 add_action( 'mainwp_cronupdatescheck_action', 'sprucely_mwpdn_check_for_updates' );
 
@@ -34,22 +41,42 @@ function sprucely_mwpdn_setup_plugin_update_hook() {
  * Checks for plugin and theme updates.
  */
 function sprucely_mwpdn_check_for_updates() {
+	sprucely_mwpdn_set_webhook_urls();
 	sprucely_mwpdn_check_for_plugin_updates();
 	sprucely_mwpdn_check_for_theme_updates();
+}
+
+/**
+ * Sets the webhook URLs if the constants are defined.
+ */
+function sprucely_mwpdn_set_webhook_urls() {
+	global $sprucely_mwpdn_webhook_urls;
+
+	// Check if the PLUGIN updates constant is defined.
+	if ( defined( 'MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+		$sprucely_mwpdn_webhook_urls['plugin_updates'] = MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL;
+	} elseif ( defined( 'MAINWP_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+		// Fallback to legacy constant if the latest one is not defined.
+		$sprucely_mwpdn_webhook_urls['plugin_updates'] = MAINWP_UPDATES_DISCORD_WEBHOOK_URL;
+	}
+
+	// Check if the THEME updates constant is defined.
+	if ( defined( 'MAINWP_THEME_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+		$sprucely_mwpdn_webhook_urls['theme_updates'] = MAINWP_THEME_UPDATES_DISCORD_WEBHOOK_URL;
+	}
 }
 
 /**
  * Checks for plugin updates and sends notifications if updates are available.
  */
 function sprucely_mwpdn_check_for_plugin_updates() {
-	// Check if the required constants are defined, if not return.
-	if ( ! defined( 'MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL' ) && ! defined( 'MAINWP_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( 'Discord webhook URL for plugin updates not defined.' );
+	global $sprucely_mwpdn_webhook_urls;
+
+	// Check if the required webhook URL is set, if not return.
+	if ( empty( $sprucely_mwpdn_webhook_urls['plugin_updates'] ) ) {
 		return;
-	} elseif ( ! defined( 'MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
-		define( 'MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL', MAINWP_UPDATES_DISCORD_WEBHOOK_URL );
 	}
+
 	global $wpdb;
 
 	// Check if cached results exist.
@@ -62,13 +89,13 @@ function sprucely_mwpdn_check_for_plugin_updates() {
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
 				"
-				SELECT
-					plugin_upgrades
-				FROM
-					{$wpdb->prefix}mainwp_wp wp
-				WHERE
-					is_ignorePluginUpdates = %d
-				",
+                SELECT
+                    plugin_upgrades
+                FROM
+                    {$wpdb->prefix}mainwp_wp wp
+                WHERE
+                    is_ignorePluginUpdates = %d
+                ",
 				0
 			)
 		);
@@ -114,7 +141,7 @@ function sprucely_mwpdn_check_for_plugin_updates() {
 
 	if ( ! empty( $unique_updates ) ) {
 		foreach ( $unique_updates as $key => $update ) {
-			if ( sprucely_mwpdn_send_discord_message( $update, 'MAINWP_PLUGIN_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+			if ( sprucely_mwpdn_send_discord_message( $update, 'plugin_updates' ) ) {
 				$sent_notifications[ $key ] = true; // Mark this notification as sent.
 			}
 			usleep( 500000 ); // Sleep for 0.5 seconds to avoid rate limiting.
@@ -128,10 +155,10 @@ function sprucely_mwpdn_check_for_plugin_updates() {
  * Checks for theme updates and sends notifications if updates are available.
  */
 function sprucely_mwpdn_check_for_theme_updates() {
-	// Check if the required constants are defined, if not return.
-	if ( ! defined( 'MAINWP_THEME_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( 'Discord webhook URL for theme updates not defined.' );
+	global $sprucely_mwpdn_webhook_urls;
+
+	// Check if the required webhook URL is set, if not return.
+	if ( empty( $sprucely_mwpdn_webhook_urls['theme_updates'] ) ) {
 		return;
 	}
 
@@ -143,17 +170,17 @@ function sprucely_mwpdn_check_for_theme_updates() {
 
 	if ( false === $results ) {
 		// Query to get theme updates from the MainWP database, excluding ignored sites.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
 				"
-				SELECT
-					theme_upgrades
-				FROM
-					{$wpdb->prefix}mainwp_wp wp
-				WHERE
-					is_ignoreThemeUpdates = %d
-				",
+                SELECT
+                    theme_upgrades
+                FROM
+                    {$wpdb->prefix}mainwp_wp wp
+                WHERE
+                    is_ignoreThemeUpdates = %d
+                ",
 				0
 			)
 		);
@@ -199,7 +226,7 @@ function sprucely_mwpdn_check_for_theme_updates() {
 
 	if ( ! empty( $unique_updates ) ) {
 		foreach ( $unique_updates as $key => $update ) {
-			if ( sprucely_mwpdn_send_discord_message( $update, 'MAINWP_THEME_UPDATES_DISCORD_WEBHOOK_URL' ) ) {
+			if ( sprucely_mwpdn_send_discord_message( $update, 'theme_updates' ) ) {
 				$sent_notifications[ $key ] = true; // Mark this notification as sent.
 			}
 			usleep( 500000 ); // Sleep for 0.5 seconds to avoid rate limiting.
@@ -304,7 +331,6 @@ function sprucely_mwpdn_convert_html_to_markdown( $html ) {
 	$markdown = preg_replace( '/<h5>(.*?)<\/h5>/', '##### $1', $markdown );
 	$markdown = preg_replace( '/<h6>(.*?)<\/h6>/', '###### $1', $markdown );
 
-
 	// Convert list tags to Markdown.
 	$markdown = preg_replace( '/<ul>/', "\n", $markdown );
 	$markdown = preg_replace( '/<\/ul>/', "\n", $markdown );
@@ -323,17 +349,20 @@ function sprucely_mwpdn_convert_html_to_markdown( $html ) {
  * Sends a message to the Discord webhook URL.
  *
  * @param array  $update            The update information.
- * @param string $webhook_url_const The webhook URL constant name.
+ * @param string $webhook_url_type The webhook URL type (plugin_updates or theme_updates).
  * @return bool True if the message was sent successfully, false otherwise.
  */
-function sprucely_mwpdn_send_discord_message( $update, $webhook_url_const ) {
-	if ( ! defined( $webhook_url_const ) ) {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+function sprucely_mwpdn_send_discord_message( $update, $webhook_url_type ) {
+	global $sprucely_mwpdn_webhook_urls;
+
+	// Check if the required webhook URL is set, if not return false.
+	if ( empty( $sprucely_mwpdn_webhook_urls[ $webhook_url_type ] ) ) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( 'Discord webhook URL not defined.' );
 		return false;
 	}
 
-	$webhook_url = constant( $webhook_url_const );
+	$webhook_url = $sprucely_mwpdn_webhook_urls[ $webhook_url_type ];
 
 	// Build the changelog summary if available.
 	$changelog_summary = '';

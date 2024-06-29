@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.4] - 2024-06-28
+- Correct typo in download link. (Thanks @JosKlever)
+- Removed non-working Github Actions workflow in favor of later testing.
+- Refactored the constant checks to correct issues noted in #9 PR by @JosKlever
+
 ## [1.1.3] - 2024-06-28
 - Added heading tags to markdown conversion
 

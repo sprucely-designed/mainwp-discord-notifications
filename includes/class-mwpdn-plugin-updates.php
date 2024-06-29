@@ -81,29 +81,12 @@ class Plugin_Updates {
 			return;
 		}
 
-		global $wpdb;
-
-		$cache_key = 'sprucely_mwpdn_plugin_updates';
-		$results   = wp_cache_get( $cache_key );
-
-		if ( false === $results ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$results = $wpdb->get_results(
-				$wpdb->prepare(
-					"
-                    SELECT
-                        plugin_upgrades
-                    FROM
-                        {$wpdb->prefix}mainwp_wp wp
-                    WHERE
-                        is_ignorePluginUpdates = %d
-                    ",
-					0
-				)
-			);
-
-			wp_cache_set( $cache_key, $results, '', 300 );
-		}
+		$results = Helpers::query_mainwp_db(
+			'plugin',
+			$wpdb->prefix . 'mainwp_wp',
+			'plugin_upgrades',
+			'is_ignorePluginUpdates'
+		);
 
 		if ( empty( $results ) ) {
 			return;

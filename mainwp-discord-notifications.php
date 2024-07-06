@@ -372,6 +372,14 @@ function sprucely_mwpdn_send_discord_message( $update, $webhook_url_type ) {
 		$changelog_summary = "**Changelog Summary:** $changelog_summary\n";
 	}
 
+	// Append the anchor tag for the correct changelog tab for plugins on wp.org
+	if ( ! empty( $update['changelog_url'] )  && ( false !== strpos( $update['changelog_url'], 'wordpress.org/plugins' ) ) ) {
+		if ( substr( $update['changelog_url'], - 1 ) !== '/' ) {
+			$update['changelog_url'] .= '/';
+		}
+		$update['changelog_url'] .= '#developers';
+	}
+	
 	// Build the description parts if available.
 	$description   = ! empty( $update['description'] ) ? '**Description:** ' . sprucely_mwpdn_convert_html_to_markdown( $update['description'] ) . "\n" : '';
 	$author        = ! empty( $update['author'] ) ? '**Author:** ' . sprucely_mwpdn_convert_html_to_markdown( $update['author'] ) . "\n" : '';

@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.2.0] - 2024-06-28
+## [1.2.0] -
 ### Added:
 - Added Sprucely_MWPDN_Plugin_Updates class to handle plugin update checks and notifications.
 - Added Sprucely_MWPDN_Theme_Updates class to handle theme update checks and notifications.
@@ -8,6 +8,9 @@
 ### Changed:
 - Refactored the plugin to follow the WordPress Plugin Boilerplate best practices.
 - Separated functionalities into individual classes and files for improved modularity and maintainability.
+
+## [1.1.5] - 2024-07-11
+- Add the #developers anchor tag to the changelog url for plugins on wordpress.org, so the changelog tab is directly opened. Thanks @JosKlever for the idea and PR.
 
 ## [1.1.4] - 2024-06-28
 - Correct typo in download link. (Thanks @JosKlever)

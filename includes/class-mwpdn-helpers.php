@@ -128,6 +128,12 @@ class Helpers {
 			$changelog_summary = "**Changelog Summary:** $changelog_summary\n";
 		}
 
+		// Append the anchor tag for the correct changelog tab for plugins on wp.org.
+		if ( ! empty( $update['changelog_url'] ) && ( false !== strpos( $update['changelog_url'], 'wordpress.org/plugins' ) ) ) {
+			// Ensure the URL ends with a trailing slash then append the anchor.
+			$update['changelog_url'] = trailingslashit( $update['changelog_url'] ) . '#developers';
+		}
+
 		// Build the description parts if available.
 		$description   = ! empty( $update['description'] ) ? '**Description:** ' . self::convert_html_to_markdown( $update['description'] ) . "\n" : '';
 		$author        = ! empty( $update['author'] ) ? '**Author:** ' . self::convert_html_to_markdown( $update['author'] ) . "\n" : '';

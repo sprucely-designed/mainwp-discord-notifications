@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.1.5] - 2024-07-11
+- Add the #developers anchor tag to the changelog url for plugins on wordpress.org, so the changelog tab is directly opened. Thanks @JosKlever for the idea and PR.
+
 ## [1.1.4] - 2024-06-28
 - Correct typo in download link. (Thanks @JosKlever)
 - Removed non-working Github Actions workflow in favor of later testing.

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Discord Webhook Notifications for MainWP
  * Description: Sends a message via webhook to a Discord server channel when a plugin or theme update is available.
- * Version: 1.1.4
+ * Version: 1.1.5
  * Author: Isaac @ Sprucely Designed
  * Author URI: https://www.sprucely.net
  * Plugin URI: https://github.com/sprucely-designed/mainwp-discord-notifications
@@ -170,7 +170,7 @@ function sprucely_mwpdn_check_for_theme_updates() {
 
 	if ( false === $results ) {
 		// Query to get theme updates from the MainWP database, excluding ignored sites.
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
 				"
@@ -357,7 +357,7 @@ function sprucely_mwpdn_send_discord_message( $update, $webhook_url_type ) {
 
 	// Check if the required webhook URL is set, if not return false.
 	if ( empty( $sprucely_mwpdn_webhook_urls[ $webhook_url_type ] ) ) {
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( 'Discord webhook URL not defined.' );
 		return false;
 	}

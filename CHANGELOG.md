@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.2.0] -
+## [1.2.1] -
 ### Added:
 - Added Sprucely_MWPDN_Plugin_Updates class to handle plugin update checks and notifications.
 - Added Sprucely_MWPDN_Theme_Updates class to handle theme update checks and notifications.

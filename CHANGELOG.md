@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.6] - 2024-07-12
+- Updated plugin header data to improve update changelog data handling.
+- Added requirement for MainWP Dashboard plugin as this plugin does nothing without it.
+
 ## [1.1.5] - 2024-07-11
 - Add the #developers anchor tag to the changelog url for plugins on wordpress.org, so the changelog tab is directly opened. Thanks @JosKlever for the idea and PR.
 

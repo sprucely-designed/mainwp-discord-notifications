@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.7] - 2024-07-12
+- Improved the sprucely_mwpdn_convert_html_to_markdown function to strip unnecessary attributes from HTML tags.
+- Fixed an issue where incomplete URLs in changelog links were not transformed correctly into Markdown links.
+- Optimized the handling of list tags to reduce unnecessary whitespace.
+
 ## [1.1.6] - 2024-07-12
 - Updated plugin header data to improve update changelog data handling.
 - Added requirement for MainWP Dashboard plugin as this plugin does nothing without it.

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Discord Webhook Notifications for MainWP
  * Description: Sends a message via webhook to a Discord server channel when a plugin or theme update is available.
- * Version: 1.1.6
+ * Version: 1.1.7
  * Author: Isaac @ Sprucely Designed
  * Author URI: https://www.sprucely.net
  * Plugin URI: https://github.com/sprucely-designed/mainwp-discord-notifications
@@ -309,7 +309,6 @@ function sprucely_mwpdn_get_thumbnail_url( $url ) {
 
 	return ''; // Return an empty string if no image is found.
 }
-
 /**
  * Converts HTML to Discord-supported Markdown.
  *
@@ -317,6 +316,12 @@ function sprucely_mwpdn_get_thumbnail_url( $url ) {
  * @return string The Markdown content.
  */
 function sprucely_mwpdn_convert_html_to_markdown( $html ) {
+	// Convert anchor tags to Markdown links first.
+	$html = preg_replace( '/<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/', '[$2]($1)', $html );
+
+	// Remove classes and other attributes from HTML tags except for the anchor tags.
+	$html = preg_replace( '/<(?!a\s|\/a\s*|\/?a\s+[^>]*\s*>)(\w+)\s+[^>]*>/', '<$1>', $html );
+
 	// Convert common HTML tags to Markdown.
 	$markdown = $html;
 	$markdown = preg_replace( '/<strong>(.*?)<\/strong>/', '**$1**', $markdown );
@@ -324,7 +329,6 @@ function sprucely_mwpdn_convert_html_to_markdown( $html ) {
 	$markdown = preg_replace( '/<em>(.*?)<\/em>/', '*$1*', $markdown );
 	$markdown = preg_replace( '/<i>(.*?)<\/i>/', '*$1*', $markdown );
 	$markdown = preg_replace( '/<code>(.*?)<\/code>/', '`$1`', $markdown );
-	$markdown = preg_replace( '/<a(.*?)href="(.*?)"(.*?)>(.*?)<\/a>/', '[$4]($2)', $markdown );
 
 	// Convert heading tags to Markdown.
 	$markdown = preg_replace( '/<h1>(.*?)<\/h1>/', '# $1', $markdown );
@@ -336,14 +340,17 @@ function sprucely_mwpdn_convert_html_to_markdown( $html ) {
 
 	// Convert list tags to Markdown.
 	$markdown = preg_replace( '/<ul>/', "\n", $markdown );
-	$markdown = preg_replace( '/<\/ul>/', "\n", $markdown );
+	$markdown = preg_replace( '/<\/ul>/', '', $markdown );
 	$markdown = preg_replace( '/<ol>/', "\n", $markdown );
 	$markdown = preg_replace( '/<\/ol>/', '', $markdown );
 	$markdown = preg_replace( '/<li>/', '- ', $markdown );
-	$markdown = preg_replace( '/<\/li>/', '', $markdown );
+	$markdown = preg_replace( '/<\/li>/', "\n", $markdown );
 
 	// Remove any remaining HTML tags.
 	// $markdown = wp_strip_all_tags( $markdown ); // Skip for debugging new potential tags.
+
+	// Remove consecutive newlines.
+	$markdown = preg_replace( "/\n{2,}/", "\n\n", $markdown );
 
 	return $markdown;
 }

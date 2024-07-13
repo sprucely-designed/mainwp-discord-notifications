@@ -23,6 +23,31 @@ To improve performance and reduce database load, the plugin uses caching:
 
 ## Installation
 
+### Known Issues
+
+#### Issue: Installation from GitHub Release Zip File
+
+As tracked in [Issue #14](https://github.com/sprucely-designed/mainwp-discord-notifications/issues/14), when installing the plugin from the GitHub release `.zip` file, the folder created in the `wp-content/plugins` directory includes the `-v#.#.#` version info. This can cause issues during updates.
+
+##### Workaround:
+On the first install, follow these steps to remove the version info from the plugin folder name:
+
+1. **Download the Latest Release:**
+   - Download the latest release `.zip` file from GitHub.
+
+2. **Extract and Rename:**
+   - Extract the contents of the `.zip` file.
+   - Rename the extracted folder from `mainwp-discord-notifications-v#.#.#` to `mainwp-discord-notifications`.
+
+3. **Install the Plugin:**
+   - Upload the renamed `mainwp-discord-notifications` folder to your `wp-content/plugins` directory.
+   - Activate the plugin from the `wp-admin` Plugins page.
+
+This ensures that future updates via Git Updater or manually will not encounter issues with folder name mismatches.
+
+##### Future Fix:
+Follow [Issue 14](https://github.com/sprucely-designed/mainwp-discord-notifications/issues/14) for updates. Future releases will include a build process to resolve this issue. Thank you for your understanding and patience.
+
 1. **Download the Plugin:**
    - [Download](https://github.com/sprucely-designed/mainwp-discord-notifications/releases) the source code ZIP file from the latest release.
 

@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.2.0] -
+## [1.3.0-beta.1]
 ### Added:
 - Added Sprucely_MWPDN_Plugin_Updates class to handle plugin update checks and notifications.
 - Added Sprucely_MWPDN_Theme_Updates class to handle theme update checks and notifications.
@@ -9,8 +9,15 @@
 - Refactored the plugin to follow the WordPress Plugin Boilerplate best practices.
 - Separated functionalities into individual classes and files for improved modularity and maintainability.
 
-## [1.1.5] - 2024-07-11
-- Add the #developers anchor tag to the changelog url for plugins on wordpress.org, so the changelog tab is directly opened. Thanks @JosKlever for the idea and PR.
+## [1.2.2] - 2024-07-12
+- Improved the sprucely_mwpdn_convert_html_to_markdown function to strip unnecessary attributes from HTML tags.
+- Fixed an issue where incomplete URLs in changelog links were not transformed correctly into Markdown links.
+- Optimized the handling of list tags to reduce unnecessary whitespace.
+- Bumped version to correct issue from dev branch rebase.
+
+## [1.1.6] - 2024-07-12
+- Updated plugin header data to improve update changelog data handling.
+- Added requirement for MainWP Dashboard plugin as this plugin does nothing without it.
 
 ## [1.1.4] - 2024-06-28
 - Correct typo in download link. (Thanks @JosKlever)

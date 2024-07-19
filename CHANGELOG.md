@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.2.3] - 2024-07-19
+- Switched from transient-based storage to update_option for storing sent notifications. This ensures that only the latest version of each plugin/theme is stored and prevents the option from growing indefinitely. Fixes an issue where notifications were sent multiple times due to the transient not being reliable with object cached setups.
+
 ## [1.2.2] - 2024-07-12
 - Improved the sprucely_mwpdn_convert_html_to_markdown function to strip unnecessary attributes from HTML tags.
 - Fixed an issue where incomplete URLs in changelog links were not transformed correctly into Markdown links.

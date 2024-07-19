@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Discord Webhook Notifications for MainWP
  * Description: Sends a message via webhook to a Discord server channel when a plugin or theme update is available.
- * Version: 1.2.2
+ * Version: 1.2.3
  * Author: Isaac @ Sprucely Designed
  * Author URI: https://www.sprucely.net
  * Plugin URI: https://github.com/sprucely-designed/mainwp-discord-notifications
@@ -92,30 +92,27 @@ function sprucely_mwpdn_check_for_plugin_updates() {
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
 				"
-                SELECT
-                    plugin_upgrades
-                FROM
-                    {$wpdb->prefix}mainwp_wp wp
-                WHERE
-                    is_ignorePluginUpdates = %d
-                ",
+				SELECT
+					plugin_upgrades
+				FROM
+					{$wpdb->prefix}mainwp_wp wp
+				WHERE
+					is_ignorePluginUpdates = %d
+				",
 				0
 			)
 		);
 
-		// Cache the results for 15 minutes.
-		wp_cache_set( $cache_key, $results, '', 300 ); // 300 = 5 minutes.
+		// Cache the results for 5 minutes.
+		wp_cache_set( $cache_key, $results, '', 300 );
 	}
 
 	if ( empty( $results ) ) {
 		return;
 	}
 
-	// Retrieve sent notifications from transient.
-	$sent_notifications = get_transient( 'sprucely_mwpdn_sent_plugin_notifications' );
-	if ( ! is_array( $sent_notifications ) ) {
-		$sent_notifications = array();
-	}
+	// Retrieve sent notifications from option.
+	$sent_notifications = get_option( 'sprucely_mwpdn_sent_plugin_notifications', array() );
 
 	$unique_updates = array();
 	foreach ( $results as $result ) {
@@ -125,7 +122,7 @@ function sprucely_mwpdn_check_for_plugin_updates() {
 				if ( isset( $plugin_info['update'] ) && ! empty( $plugin_info['update'] ) ) {
 					$update_info = $plugin_info['update'];
 					$unique_key  = $plugin_slug . '|' . $update_info['new_version'];
-					if ( ! isset( $unique_updates[ $unique_key ] ) && ! isset( $sent_notifications[ $unique_key ] ) ) {
+					if ( ! isset( $sent_notifications[ $plugin_slug ] ) || version_compare( $sent_notifications[ $plugin_slug ], $update_info['new_version'], '<' ) ) {
 						$unique_updates[ $unique_key ] = array(
 							'plugin_name'   => $plugin_info['Name'],
 							'new_version'   => $update_info['new_version'],
@@ -145,12 +142,13 @@ function sprucely_mwpdn_check_for_plugin_updates() {
 	if ( ! empty( $unique_updates ) ) {
 		foreach ( $unique_updates as $key => $update ) {
 			if ( sprucely_mwpdn_send_discord_message( $update, 'plugin_updates' ) ) {
-				$sent_notifications[ $key ] = true; // Mark this notification as sent.
+				list( $plugin_slug, $new_version ) = explode( '|', $key );
+				$sent_notifications[ $plugin_slug ] = $new_version; // Mark this notification as sent.
 			}
 			usleep( 500000 ); // Sleep for 0.5 seconds to avoid rate limiting.
 		}
 		// Store the updated sent notifications.
-		set_transient( 'sprucely_mwpdn_sent_plugin_notifications', $sent_notifications, WEEK_IN_SECONDS );
+		update_option( 'sprucely_mwpdn_sent_plugin_notifications', $sent_notifications );
 	}
 }
 
@@ -188,19 +186,16 @@ function sprucely_mwpdn_check_for_theme_updates() {
 			)
 		);
 
-		// Cache the results for 15 minutes.
-		wp_cache_set( $cache_key, $results, '', 300 ); // 300 = 5 minutes.
+		// Cache the results for 5 minutes.
+		wp_cache_set( $cache_key, $results, '', 300 );
 	}
 
 	if ( empty( $results ) ) {
 		return;
 	}
 
-	// Retrieve sent notifications from transient.
-	$sent_notifications = get_transient( 'sprucely_mwpdn_sent_theme_notifications' );
-	if ( ! is_array( $sent_notifications ) ) {
-		$sent_notifications = array();
-	}
+	// Retrieve sent notifications from option.
+	$sent_notifications = get_option( 'sprucely_mwpdn_sent_theme_notifications', array() );
 
 	$unique_updates = array();
 	foreach ( $results as $result ) {
@@ -210,7 +205,7 @@ function sprucely_mwpdn_check_for_theme_updates() {
 				if ( isset( $theme_info['update'] ) && ! empty( $theme_info['update'] ) ) {
 					$update_info = $theme_info['update'];
 					$unique_key  = $theme_slug . '|' . $update_info['new_version'];
-					if ( ! isset( $unique_updates[ $unique_key ] ) && ! isset( $sent_notifications[ $unique_key ] ) ) {
+					if ( ! isset( $sent_notifications[ $theme_slug ] ) || version_compare( $sent_notifications[ $theme_slug ], $update_info['new_version'], '<' ) ) {
 						$unique_updates[ $unique_key ] = array(
 							'theme_name'    => $theme_info['Name'],
 							'new_version'   => $update_info['new_version'],
@@ -230,12 +225,13 @@ function sprucely_mwpdn_check_for_theme_updates() {
 	if ( ! empty( $unique_updates ) ) {
 		foreach ( $unique_updates as $key => $update ) {
 			if ( sprucely_mwpdn_send_discord_message( $update, 'theme_updates' ) ) {
-				$sent_notifications[ $key ] = true; // Mark this notification as sent.
+				list( $theme_slug, $new_version ) = explode( '|', $key );
+				$sent_notifications[ $theme_slug ] = $new_version; // Mark this notification as sent.
 			}
 			usleep( 500000 ); // Sleep for 0.5 seconds to avoid rate limiting.
 		}
 		// Store the updated sent notifications.
-		set_transient( 'sprucely_mwpdn_sent_theme_notifications', $sent_notifications, WEEK_IN_SECONDS );
+		update_option( 'sprucely_mwpdn_sent_theme_notifications', $sent_notifications );
 	}
 }
 

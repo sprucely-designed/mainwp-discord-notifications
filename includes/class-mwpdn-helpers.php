@@ -54,20 +54,24 @@ class Helpers {
 		// Search for Open Graph image tags and standard favicon links.
 		$meta_tags = $dom->getElementsByTagName( 'meta' );
 		foreach ( $meta_tags as $meta ) {
-			if ( $meta->getAttribute( 'property' ) === 'og:image' || $meta->getAttribute( 'name' ) === 'og:image' ) {
-				return $meta->getAttribute( 'content' );
+			if ( $meta instanceof \DOMElement ) {
+				if ( $meta->getAttribute( 'property' ) === 'og:image' || $meta->getAttribute( 'name' ) === 'og:image' ) {
+					return $meta->getAttribute( 'content' );
+				}
 			}
 		}
 
 		$links = $dom->getElementsByTagName( 'link' );
 		foreach ( $links as $link ) {
-			if ( $link->getAttribute( 'rel' ) === 'icon' || $link->getAttribute( 'rel' ) === 'shortcut icon' ) {
-				$favicon_url = $link->getAttribute( 'href' );
-				if ( strpos( $favicon_url, 'http' ) === false ) {
-					// Handle relative URLs.
-					$favicon_url = $base_url . '/' . ltrim( $favicon_url, '/' );
+			if ( $link instanceof \DOMElement ) {
+				if ( $link->getAttribute( 'rel' ) === 'icon' || $link->getAttribute( 'rel' ) === 'shortcut icon' ) {
+					$favicon_url = $link->getAttribute( 'href' );
+					if ( strpos( $favicon_url, 'http' ) === false ) {
+						// Handle relative URLs.
+						$favicon_url = $base_url . '/' . ltrim( $favicon_url, '/' );
+					}
+					return $favicon_url;
 				}
-				return $favicon_url;
 			}
 		}
 

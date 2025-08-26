@@ -1,6 +1,20 @@
 # Changelog
 
-## [1.3.0-beta.1]
+## [1.3.0-beta.2] - 2025-08-26
+### Added
+- Support link added to plugin row meta linking to GitHub Issues.
+- Deactivation hook now clears scheduled events and removes notification log options.
+- Scheduled hooks wired for both plugin and theme update checks.
+
+### Changed
+- Persistent notification tracking moved from transients to WordPress options with version-based dedupe (per plugin/theme).
+- Database query helper hardened and cached; refactor keeps 5-minute caching behavior.
+
+### Fixed
+- Ensured WordPress.org changelog URLs append the #developers anchor correctly.
+- Prevented duplicate notifications by comparing stored version per slug.
+
+## [1.3.0-beta.1] - 2024-07-12
 ### Added:
 - Added Sprucely_MWPDN_Plugin_Updates class to handle plugin update checks and notifications.
 - Added Sprucely_MWPDN_Theme_Updates class to handle theme update checks and notifications.

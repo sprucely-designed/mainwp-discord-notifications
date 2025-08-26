@@ -62,6 +62,8 @@ class Plugin_Updates {
 	private function setup_hooks() {
 		add_action( 'mainwp_child_plugin_activated', array( $this, 'setup_plugin_update_hook' ) );
 		add_action( 'mainwp_cronupdatescheck_action', array( $this, 'check_for_plugin_updates' ) );
+		// Ensure our scheduled hook runs the checker.
+		add_action( 'sprucely_mwpdn_check_for_plugin_updates', array( $this, 'check_for_plugin_updates' ) );
 	}
 
 	/**
@@ -94,45 +96,39 @@ class Plugin_Updates {
 			return;
 		}
 
-		$sent_notifications = get_transient( 'sprucely_mwpdn_sent_plugin_notifications' );
-		if ( ! is_array( $sent_notifications ) ) {
-			$sent_notifications = array();
-		}
-
-		$unique_updates = array();
 		foreach ( $results as $result ) {
 			$plugin_upgrades = json_decode( $result->plugin_upgrades, true );
 			if ( is_array( $plugin_upgrades ) ) {
 				foreach ( $plugin_upgrades as $plugin_slug => $plugin_info ) {
 					if ( isset( $plugin_info['update'] ) && ! empty( $plugin_info['update'] ) ) {
 						$update_info = $plugin_info['update'];
-						$unique_key  = $plugin_slug . '|' . $update_info['new_version'];
-						if ( ! isset( $unique_updates[ $unique_key ] ) && ! isset( $sent_notifications[ $unique_key ] ) ) {
-							$unique_updates[ $unique_key ] = array(
-								'plugin_name'   => $plugin_info['Name'],
-								'new_version'   => $update_info['new_version'],
-								'changelog_url' => $update_info['url'] ?? '',
-								'plugin_uri'    => $plugin_info['PluginURI'] ?? '',
-								'thumbnail_url' => Helpers::get_cached_thumbnail_url( $plugin_info['PluginURI'] ),
-								'description'   => $plugin_info['Description'] ?? '',
-								'author'        => $plugin_info['AuthorName'] ?? '',
-								'changelog'     => $update_info['sections']['changelog'] ?? '',
-							);
+
+						// Check if we already sent notification for this version
+						if ( Helpers::is_notification_sent( 'plugin', $plugin_slug, $update_info['new_version'] ) ) {
+							continue;
 						}
+
+						$update_data = array(
+							'plugin_name'   => $plugin_info['Name'],
+							'new_version'   => $update_info['new_version'],
+							'changelog_url' => $update_info['url'] ?? '',
+							'plugin_uri'    => $plugin_info['PluginURI'] ?? '',
+							'thumbnail_url' => Helpers::get_cached_thumbnail_url( $plugin_info['PluginURI'] ),
+							'description'   => $plugin_info['Description'] ?? '',
+							'author'        => $plugin_info['AuthorName'] ?? '',
+							'changelog'     => $update_info['sections']['changelog'] ?? '',
+						);
+
+						// Send Discord notification
+						if ( Helpers::send_discord_message( $update_data, $this->webhook_urls['plugin_updates'] ) ) {
+							// Mark as sent only if Discord message was successful
+							Helpers::mark_notification_sent( 'plugin', $plugin_slug, $update_info['new_version'] );
+						}
+
+						usleep( 500000 ); // Sleep to avoid rate limiting
 					}
 				}
 			}
-		}
-
-		if ( ! empty( $unique_updates ) ) {
-			foreach ( $unique_updates as $key => $update ) {
-				if ( Helpers::send_discord_message( $update, $this->webhook_urls['plugin_updates'] ) ) {
-					$sent_notifications[ $key ] = true;
-				}
-				usleep( 500000 );
-			}
-
-			set_transient( 'sprucely_mwpdn_sent_plugin_notifications', $sent_notifications, WEEK_IN_SECONDS );
 		}
 	}
 }

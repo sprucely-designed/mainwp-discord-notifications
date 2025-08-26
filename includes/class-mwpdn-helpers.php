@@ -211,27 +211,67 @@ class Helpers {
 		$results   = wp_cache_get( $cache_key );
 
 		if ( false === $results ) {
+			// Build SQL safely for identifiers (coming from internal constants only).
+			$column       = preg_replace( '/[^a-zA-Z0-9_]/', '', $column_name );
+			$table        = preg_replace( '/[^a-zA-Z0-9_]/', '', $table_name );
+			$ignore_col   = preg_replace( '/[^a-zA-Z0-9_]/', '', $ignore_column );
+			$sql          = "SELECT {$column} FROM {$table} wp WHERE {$ignore_col} = %d";
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$prepared_sql = $wpdb->prepare( $sql, 0 );
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$results = $wpdb->get_results(
-				$wpdb->prepare(
-					'
-					SELECT
-						%s
-					FROM
-						%s wp
-					WHERE
-						%s = %d
-					',
-					$column_name,
-					$table_name,
-					$ignore_column,
-					0
-				)
-			);
+			$results      = $wpdb->get_results( $prepared_sql );
 
 			wp_cache_set( $cache_key, $results, '', 300 ); // Cache for 5 minutes.
 		}
 
 		return $results ?: array();
+	}
+
+	/**
+	 * Get sent notifications from options by type.
+	 *
+	 * @param 'plugin'|'theme' $type Type of updates.
+	 * @return array Array of sent notifications.
+	 */
+	public static function get_sent_notifications( string $type ): array {
+		$option_name = ( 'theme' === $type ) ? 'sprucely_mwpdn_sent_theme_notifications' : 'sprucely_mwpdn_sent_plugin_notifications';
+		return get_option( $option_name, array() );
+	}
+
+	/**
+	 * Update sent notifications in options by type.
+	 *
+	 * @param 'plugin'|'theme' $type Type of updates.
+	 * @param array            $notifications Array of sent notifications.
+	 */
+	public static function update_sent_notifications( string $type, array $notifications ): void {
+		$option_name = ( 'theme' === $type ) ? 'sprucely_mwpdn_sent_theme_notifications' : 'sprucely_mwpdn_sent_plugin_notifications';
+		update_option( $option_name, $notifications );
+	}
+
+	/**
+	 * Check if notification was already sent for this plugin/theme version.
+	 *
+	 * @param 'plugin'|'theme' $type Type of updates.
+	 * @param string           $slug Plugin or theme slug.
+	 * @param string           $version Version number.
+	 * @return bool True if already sent, false otherwise.
+	 */
+	public static function is_notification_sent( string $type, string $slug, string $version ): bool {
+		$sent_notifications = self::get_sent_notifications( $type );
+		return isset( $sent_notifications[ $slug ] ) && version_compare( $sent_notifications[ $slug ], $version, '>=' );
+	}
+
+	/**
+	 * Mark notification as sent for this plugin/theme version.
+	 *
+	 * @param 'plugin'|'theme' $type Type of updates.
+	 * @param string           $slug Plugin or theme slug.
+	 * @param string           $version Version number.
+	 */
+	public static function mark_notification_sent( string $type, string $slug, string $version ): void {
+		$sent_notifications           = self::get_sent_notifications( $type );
+		$sent_notifications[ $slug ]  = $version;
+		self::update_sent_notifications( $type, $sent_notifications );
 	}
 }

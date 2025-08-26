@@ -39,6 +39,10 @@ class Main {
 		$this->set_webhook_urls();
 		$this->load_dependencies();
 		$this->initialize_classes();
+		$this->setup_hooks();
+
+		// Register deactivation hook
+		register_deactivation_hook( MAINWP_DISCORD_DIR . 'mainwp-discord-notifications.php', array( $this, 'deactivate' ) );
 	}
 
 	/**
@@ -82,6 +86,65 @@ class Main {
 	private function initialize_classes() {
 		Plugin_Updates::get_instance()->set_webhook_urls( $this->webhook_urls );
 		Theme_Updates::get_instance()->set_webhook_urls( $this->webhook_urls );
+	}
+
+	/**
+	 * Setup hooks and filters.
+	 */
+	private function setup_hooks() {
+		add_filter( 'plugin_row_meta', array( $this, 'add_support_meta_link' ), 10, 2 );
+	}
+
+	/**
+	 * Add support link to plugin meta row.
+	 *
+	 * @param array  $links An array of the plugin's metadata.
+	 * @param string $file  Path to the plugin file relative to the plugins directory.
+	 * @return array Modified array of plugin metadata.
+	 */
+	public function add_support_meta_link( $links, $file ) {
+		if ( plugin_basename( MAINWP_DISCORD_DIR . 'mainwp-discord-notifications.php' ) === $file ) {
+			$support_link = '<a href="https://github.com/sprucely-designed/mainwp-discord-notifications/issues">' . __( 'Support', 'mainwp-discord-webhook-notifications' ) . '</a>';
+			$links[] = $support_link;
+		}
+		return $links;
+	}
+
+	/**
+	 * Plugin deactivation cleanup.
+	 *
+	 * Clears scheduled hooks and options when plugin is deactivated.
+	 */
+	public function deactivate() {
+		// Clear any scheduled hooks
+		wp_clear_scheduled_hook( 'sprucely_mwpdn_check_for_plugin_updates' );
+		wp_clear_scheduled_hook( 'sprucely_mwpdn_check_for_theme_updates' );
+
+		// Clear plugin-related options
+		$this->clear_plugin_options();
+	}
+
+	/**
+	 * Clear all plugin-related options.
+	 */
+	private function clear_plugin_options() {
+		global $wpdb;
+
+		// Remove the notification storage options
+		delete_option( 'sprucely_mwpdn_sent_plugin_notifications' );
+		delete_option( 'sprucely_mwpdn_sent_theme_notifications' );
+
+		// Clear any remaining transients (if any exist)
+		if ( isset( $wpdb ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+					'_transient_sprucely_mwpdn_%',
+					'_transient_timeout_sprucely_mwpdn_%'
+				)
+			);
+		}
 	}
 
 	/**

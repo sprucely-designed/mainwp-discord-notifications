@@ -1,7 +1,22 @@
 # Changelog
 
-## [1.2.3] - 2024-07-19
-- Switched from transient-based storage to update_option for storing sent notifications. Fixes an issue where notifications were sent multiple times due to the transient not being reliable with object cached setups.
+## [1.3.0] - 2025-08-26
+### Added
+- New class-based architecture:
+	- Plugin_Updates for plugin update checks and notifications.
+	- Theme_Updates for theme update checks and notifications.
+	- Helpers for thumbnail caching, HTML→Markdown conversion, DB access, and Discord messaging.
+- Support link in plugin row meta linking to GitHub Issues.
+- Deactivation hook clears scheduled events and removes notification log options.
+- Scheduled hooks wired for both plugin and theme update checks.
+
+### Changed
+- Persistent notification tracking moved from transients to WordPress options with version-based dedupe (per plugin/theme).
+- Database query helper hardened
+
+### Fixed
+- WordPress.org changelog URLs now append the #developers anchor correctly.
+- Prevent duplicate notifications by comparing stored version per slug.
 
 ## [1.2.2] - 2024-07-12
 - Improved the sprucely_mwpdn_convert_html_to_markdown function to strip unnecessary attributes from HTML tags.
@@ -12,9 +27,6 @@
 ## [1.1.6] - 2024-07-12
 - Updated plugin header data to improve update changelog data handling.
 - Added requirement for MainWP Dashboard plugin as this plugin does nothing without it.
-
-## [1.1.5] - 2024-07-11
-- Add the #developers anchor tag to the changelog url for plugins on wordpress.org, so the changelog tab is directly opened. Thanks @JosKlever for the idea and PR.
 
 ## [1.1.4] - 2024-06-28
 - Correct typo in download link. (Thanks @JosKlever)

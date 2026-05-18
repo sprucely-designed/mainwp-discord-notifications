@@ -272,6 +272,11 @@ class Helpers {
 			$changelog_url = trailingslashit( $changelog_url ) . '#developers';
 		}
 
+		// Append the changelog path for GitHub-hosted plugins.
+		if ( '' !== $changelog_url && preg_match( '#^https://github\.com/[^/]+/[^/]+/?$#i', $changelog_url ) ) {
+			$changelog_url = trailingslashit( $changelog_url ) . 'blob/main/CHANGELOG.md';
+		}
+
 		// Build the description parts if available.
 		$description   = '' !== $description ? '**Description:** ' . $description . "\n" : '';
 		$author        = '' !== $author ? '**Author:** ' . $author . "\n" : '';

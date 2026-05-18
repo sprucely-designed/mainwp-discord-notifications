@@ -24,7 +24,10 @@ class Helpers {
 
 		if ( false === $thumbnail_url ) {
 			$thumbnail_url = self::get_thumbnail_url( $url );
-			set_transient( $cache_key, $thumbnail_url, WEEK_IN_SECONDS );
+
+			if ( '' !== $thumbnail_url ) {
+				set_transient( $cache_key, $thumbnail_url, WEEK_IN_SECONDS );
+			}
 		}
 
 		return $thumbnail_url;
@@ -37,7 +40,15 @@ class Helpers {
 	 * @return string The thumbnail URL.
 	 */
 	public static function get_thumbnail_url( string $url ): string {
+		if ( empty( $url ) ) {
+			return '';
+		}
+
 		$parsed_url = wp_parse_url( $url );
+		if ( empty( $parsed_url['scheme'] ) || empty( $parsed_url['host'] ) ) {
+			return '';
+		}
+
 		$base_url   = $parsed_url['scheme'] . '://' . $parsed_url['host'];
 
 		// Fetch the HTML content of the page.
@@ -46,10 +57,32 @@ class Helpers {
 			return ''; // Return an empty string if fetching the HTML fails.
 		}
 
+		if ( 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			return '';
+		}
+
 		$html = wp_remote_retrieve_body( $response );
-		libxml_use_internal_errors( true ); // Handle HTML parsing errors gracefully.
+		if ( ! is_string( $html ) || '' === trim( $html ) ) {
+			return '';
+		}
+
+		$previous_errors = libxml_use_internal_errors( true ); // Handle HTML parsing errors gracefully.
 		$dom = new \DOMDocument();
-		$dom->loadHTML( $html );
+
+		try {
+			$loaded = $dom->loadHTML( $html );
+		} catch ( \ValueError $error ) {
+			libxml_clear_errors();
+			libxml_use_internal_errors( $previous_errors );
+			return '';
+		}
+
+		libxml_clear_errors();
+		libxml_use_internal_errors( $previous_errors );
+
+		if ( false === $loaded ) {
+			return '';
+		}
 
 		// Search for Open Graph image tags and standard favicon links.
 		$meta_tags = $dom->getElementsByTagName( 'meta' );

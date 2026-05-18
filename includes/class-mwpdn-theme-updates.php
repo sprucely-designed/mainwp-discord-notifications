@@ -109,7 +109,9 @@ class Theme_Updates {
 					$update_info = $theme_info['update'];
 					$new_version = is_scalar( $update_info['new_version'] ?? null ) ? trim( (string) $update_info['new_version'] ) : '';
 					$theme_name  = is_scalar( $theme_info['Name'] ?? null ) ? trim( (string) $theme_info['Name'] ) : '';
-					$theme_uri   = Helpers::sanitize_remote_url( $update_info['url'] ?? '' );
+					$theme_uri   = Helpers::sanitize_remote_url( $theme_info['ThemeURI'] ?? '' );
+					$changelog_url = Helpers::normalize_remote_reference_url( $theme_uri, $update_info['url'] ?? '' );
+					$theme_uri   = '' !== $theme_uri ? $theme_uri : $changelog_url;
 
 					if ( '' === $new_version || '' === $theme_name ) {
 						continue;
@@ -123,7 +125,7 @@ class Theme_Updates {
 					$update_data = array(
 						'theme_name'    => $theme_name,
 						'new_version'   => $new_version,
-						'changelog_url' => $theme_uri,
+						'changelog_url' => $changelog_url,
 						'theme_uri'     => $theme_uri,
 						'thumbnail_url' => Helpers::get_cached_thumbnail_url( $theme_uri ),
 						'description'   => is_scalar( $theme_info['Description'] ?? null ) ? (string) $theme_info['Description'] : '',

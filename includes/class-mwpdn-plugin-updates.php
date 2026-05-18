@@ -110,6 +110,7 @@ class Plugin_Updates {
 					$new_version = is_scalar( $update_info['new_version'] ?? null ) ? trim( (string) $update_info['new_version'] ) : '';
 					$plugin_name = is_scalar( $plugin_info['Name'] ?? null ) ? trim( (string) $plugin_info['Name'] ) : '';
 					$plugin_uri  = Helpers::sanitize_remote_url( $plugin_info['PluginURI'] ?? '' );
+					$changelog_url = Helpers::normalize_remote_reference_url( $plugin_uri, $update_info['url'] ?? '' );
 
 					if ( '' === $new_version || '' === $plugin_name ) {
 						continue;
@@ -123,7 +124,7 @@ class Plugin_Updates {
 					$update_data = array(
 						'plugin_name'   => $plugin_name,
 						'new_version'   => $new_version,
-						'changelog_url' => Helpers::sanitize_remote_url( $update_info['url'] ?? '' ),
+						'changelog_url' => $changelog_url,
 						'plugin_uri'    => $plugin_uri,
 						'thumbnail_url' => Helpers::get_cached_thumbnail_url( $plugin_uri ),
 						'description'   => is_scalar( $plugin_info['Description'] ?? null ) ? (string) $plugin_info['Description'] : '',

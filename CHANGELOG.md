@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3.2] - 2026-05-18
+### Fixed
+- Normalize relative changelog URLs from MainWP update data so the Discord notification changelog link renders as a clickable absolute URL.
+
+## [1.3.1] - 2026-05-18
+### Security
+- Hardened Discord notification payload handling for remote update data.
+- Added validation for update payload fields decoded from MainWP JSON before building notifications.
+- Validate changelog, embed, webhook, and thumbnail URLs before using them in Discord payloads or remote fetches.
+- Validate extracted Open Graph and favicon URLs before using them for thumbnail lookups.
+
+### Fixed
+- Prevent fatal errors when remote thumbnail page responses are empty or invalid.
+- Reduced Discord webhook failure logging to status/error summaries instead of full response bodies.
+
 ## [1.3.0] - 2025-08-26
 ### Added
 - New class-based architecture:

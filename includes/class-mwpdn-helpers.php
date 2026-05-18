@@ -70,6 +70,49 @@ class Helpers {
 	}
 
 	/**
+	 * Normalize a remote URL that may be absolute, root-relative, or path-relative.
+	 *
+	 * @param string $base_url      Base URL used for resolving relative paths.
+	 * @param mixed  $candidate_url Candidate URL.
+	 * @return string
+	 */
+	public static function normalize_remote_reference_url( string $base_url, $candidate_url ): string {
+		if ( ! is_scalar( $candidate_url ) ) {
+			return '';
+		}
+
+		$candidate_url = trim( (string) $candidate_url );
+		if ( '' === $candidate_url ) {
+			return '';
+		}
+
+		$normalized_url = self::sanitize_remote_url( $candidate_url );
+		if ( '' !== $normalized_url ) {
+			return $normalized_url;
+		}
+
+		$base_url = self::sanitize_remote_url( $base_url );
+		if ( '' === $base_url ) {
+			return '';
+		}
+
+		$base_parts = wp_parse_url( $base_url );
+		if ( empty( $base_parts['scheme'] ) || empty( $base_parts['host'] ) ) {
+			return '';
+		}
+
+		if ( 0 === strpos( $candidate_url, '//' ) ) {
+			$candidate_url = $base_parts['scheme'] . ':' . $candidate_url;
+		} elseif ( 0 === strpos( $candidate_url, '/' ) ) {
+			$candidate_url = $base_parts['scheme'] . '://' . $base_parts['host'] . $candidate_url;
+		} else {
+			$candidate_url = untrailingslashit( $base_url ) . '/' . ltrim( $candidate_url, '/' );
+		}
+
+		return self::sanitize_remote_url( $candidate_url );
+	}
+
+	/**
 	 * Build an absolute URL from a remote document URL and a candidate asset URL.
 	 *
 	 * @param string $base_url      Base URL.
@@ -77,23 +120,7 @@ class Helpers {
 	 * @return string
 	 */
 	public static function normalize_remote_asset_url( string $base_url, string $candidate_url ): string {
-		$candidate_url = trim( $candidate_url );
-		if ( '' === $candidate_url ) {
-			return '';
-		}
-
-		if ( 0 === strpos( $candidate_url, '//' ) ) {
-			$scheme = wp_parse_url( $base_url, PHP_URL_SCHEME );
-			if ( ! is_string( $scheme ) || '' === $scheme ) {
-				return '';
-			}
-
-			$candidate_url = $scheme . ':' . $candidate_url;
-		} elseif ( ! preg_match( '#^[a-zA-Z][a-zA-Z0-9+.-]*://#', $candidate_url ) ) {
-			$candidate_url = untrailingslashit( $base_url ) . '/' . ltrim( $candidate_url, '/' );
-		}
-
-		return self::sanitize_remote_url( $candidate_url );
+		return self::normalize_remote_reference_url( $base_url, $candidate_url );
 	}
 
 	/**

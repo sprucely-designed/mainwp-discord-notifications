@@ -1,0 +1,28 @@
+name: Build and attach release ZIP
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create release ZIP
+        run: |
+          mkdir -p build/mainwp-discord-notifications
+          rsync -av --exclude='.git' \
+                    --exclude='.github' \
+                    --exclude='build' \
+                    ./ build/mainwp-discord-notifications/
+          cd build
+          zip -r mainwp-discord-notifications.zip mainwp-discord-notifications/
+
+      - name: Upload ZIP to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/mainwp-discord-notifications.zip

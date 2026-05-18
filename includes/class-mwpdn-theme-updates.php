@@ -80,8 +80,9 @@ class Theme_Updates {
 	 */
 	public function check_for_theme_updates() {
 		global $wpdb;
+		/** @var \wpdb|null $wpdb */
 
-		if ( empty( $this->webhook_urls['theme_updates'] ) ) {
+		if ( empty( $this->webhook_urls['theme_updates'] ) || ! $wpdb instanceof \wpdb ) {
 			return;
 		}
 
@@ -100,33 +101,43 @@ class Theme_Updates {
 			$theme_upgrades = json_decode( $result->theme_upgrades, true );
 			if ( is_array( $theme_upgrades ) ) {
 				foreach ( $theme_upgrades as $theme_slug => $theme_info ) {
-					if ( isset( $theme_info['update'] ) && ! empty( $theme_info['update'] ) ) {
-						$update_info = $theme_info['update'];
-
-						// Check if we already sent notification for this version
-						if ( Helpers::is_notification_sent( 'theme', $theme_slug, $update_info['new_version'] ) ) {
-							continue;
-						}
-
-						$update_data = array(
-							'theme_name'    => $theme_info['Name'],
-							'new_version'   => $update_info['new_version'],
-							'changelog_url' => $update_info['url'] ?? '',
-							'theme_uri'     => $update_info['url'] ?? '',
-							'thumbnail_url' => Helpers::get_cached_thumbnail_url( $update_info['url'] ),
-							'description'   => $theme_info['Description'] ?? '',
-							'author'        => $theme_info['AuthorName'] ?? '',
-							'changelog'     => $update_info['sections']['changelog'] ?? '',
-						);
-
-						// Send Discord notification
-						if ( Helpers::send_discord_message( $update_data, $this->webhook_urls['theme_updates'] ) ) {
-							// Mark as sent only if Discord message was successful
-							Helpers::mark_notification_sent( 'theme', $theme_slug, $update_info['new_version'] );
-						}
-
-						usleep( 500000 ); // Sleep to avoid rate limiting
+					if ( ! is_scalar( $theme_slug ) || ! is_array( $theme_info ) || empty( $theme_info['update'] ) || ! is_array( $theme_info['update'] ) ) {
+						continue;
 					}
+
+					$theme_slug  = (string) $theme_slug;
+					$update_info = $theme_info['update'];
+					$new_version = is_scalar( $update_info['new_version'] ?? null ) ? trim( (string) $update_info['new_version'] ) : '';
+					$theme_name  = is_scalar( $theme_info['Name'] ?? null ) ? trim( (string) $theme_info['Name'] ) : '';
+					$theme_uri   = Helpers::sanitize_remote_url( $update_info['url'] ?? '' );
+
+					if ( '' === $new_version || '' === $theme_name ) {
+						continue;
+					}
+
+					// Check if we already sent notification for this version
+					if ( Helpers::is_notification_sent( 'theme', $theme_slug, $new_version ) ) {
+						continue;
+					}
+
+					$update_data = array(
+						'theme_name'    => $theme_name,
+						'new_version'   => $new_version,
+						'changelog_url' => $theme_uri,
+						'theme_uri'     => $theme_uri,
+						'thumbnail_url' => Helpers::get_cached_thumbnail_url( $theme_uri ),
+						'description'   => is_scalar( $theme_info['Description'] ?? null ) ? (string) $theme_info['Description'] : '',
+						'author'        => is_scalar( $theme_info['AuthorName'] ?? null ) ? (string) $theme_info['AuthorName'] : '',
+						'changelog'     => is_scalar( $update_info['sections']['changelog'] ?? null ) ? (string) $update_info['sections']['changelog'] : '',
+					);
+
+					// Send Discord notification
+					if ( Helpers::send_discord_message( $update_data, $this->webhook_urls['theme_updates'] ) ) {
+						// Mark as sent only if Discord message was successful
+						Helpers::mark_notification_sent( 'theme', $theme_slug, $new_version );
+					}
+
+					usleep( 500000 ); // Sleep to avoid rate limiting
 				}
 			}
 		}

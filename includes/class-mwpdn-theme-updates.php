@@ -60,7 +60,7 @@ class Theme_Updates {
 	 * Setup hooks and filters.
 	 */
 	private function setup_hooks() {
-		add_action( 'mainwp_child_plugin_activated', array( $this, 'setup_theme_update_hook' ) );
+		register_activation_hook( MAINWP_DISCORD_DIR . 'mainwp-discord-notifications.php', array( $this, 'setup_theme_update_hook' ) );
 		add_action( 'mainwp_cronupdatescheck_action', array( $this, 'check_for_theme_updates' ) );
 		// Ensure our scheduled hook runs the checker.
 		add_action( 'sprucely_mwpdn_check_for_theme_updates', array( $this, 'check_for_theme_updates' ) );
